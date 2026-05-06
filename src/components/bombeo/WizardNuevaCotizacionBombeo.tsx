@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,12 +21,12 @@ import type {
   TipoSistemaBombeo,
 } from '@/types/bombeo'
 
-const PASOS = ['Tipo y cliente', 'Datos tecnicos', 'Precio y resumen']
+const PASOS = ['Tipo y cliente', 'Datos técnicos', 'Precio y resumen']
 
 const ETIQUETAS_SISTEMA: Record<TipoSistemaBombeo, string> = {
   solar_directo: 'Solar directo',
   solar_vfd: 'Solar con VFD',
-  electrico: 'Electrico',
+  electrico: 'Eléctrico',
 }
 
 const ETIQUETAS_BOMBA: Record<TipoBomba, string> = {
@@ -233,7 +234,7 @@ export function WizardNuevaCotizacionBombeo({
       nuevosErrores.litrosDiaRequeridos = 'Ingresa los litros por dia'
     }
     if (form.alturaDescargaM === '' || Number(form.alturaDescargaM) < 0) {
-      nuevosErrores.alturaDescargaM = 'Ingresa una altura valida'
+      nuevosErrores.alturaDescargaM = 'Ingresa una altura válida'
     }
 
     setErrores(nuevosErrores)
@@ -252,12 +253,12 @@ export function WizardNuevaCotizacionBombeo({
 
   function enviar(estado: 'borrador' | 'enviada') {
     if (!esValido || !resultado) {
-      setErrorSubmit('Completa los datos tecnicos antes de guardar la cotizacion.')
+      setErrorSubmit('Completa los datos técnicos antes de guardar la cotización.')
       return
     }
 
     if (!form.bombaMarca.trim()) {
-      setErrorSubmit('Selecciona o completa la informacion de la bomba.')
+      setErrorSubmit('Selecciona o completa la información de la bomba.')
       return
     }
 
@@ -300,6 +301,7 @@ export function WizardNuevaCotizacionBombeo({
 
       if (response?.error) {
         setErrorSubmit(response.error)
+        toast.error(response.error)
       }
     })
   }
@@ -419,9 +421,9 @@ export function WizardNuevaCotizacionBombeo({
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4">
           <div className="space-y-4">
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-[0_1px_3px_rgba(0,0,0,0.05)] p-6">
-              <h2 className="text-[15px] font-medium text-[var(--text)] mb-1">Datos tecnicos</h2>
+              <h2 className="text-[15px] font-medium text-[var(--text)] mb-1">Datos técnicos</h2>
               <p className="text-[13px] text-[var(--text-3)] mb-6">
-                Ingresa los datos hidraulicos y revisa el calculo en tiempo real.
+                Ingresa los datos hidráulicos y revisa el cálculo en tiempo real.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -512,7 +514,7 @@ export function WizardNuevaCotizacionBombeo({
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] shadow-[0_1px_3px_rgba(0,0,0,0.05)] p-6">
               <Textarea
                 label="Notas"
-                placeholder="Condiciones, observaciones y alcance de instalacion..."
+                placeholder="Condiciones, observaciones y alcance de instalación..."
                 rows={4}
                 value={form.notas}
                 onChange={(e) => actualizar('notas', e.target.value)}

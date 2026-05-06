@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, Suspense, useMemo, useState } from 'react'
+import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowRight,
@@ -19,6 +19,8 @@ import { cn } from '@/lib/utils'
 
 type ModoAcceso = 'login' | 'signup'
 type PasoAcceso = 'formulario' | 'codigo'
+
+const OTP_COOLDOWN_SEGUNDOS = 60
 
 const BENEFICIOS = [
   '3 meses de prueba gratuita desde el alta',
@@ -39,6 +41,15 @@ function normalizarErrorAuth(mensaje: string) {
 
   if (texto.includes('provider is not enabled')) {
     return 'Google Auth no esta habilitado aun en Supabase.'
+  }
+
+  if (
+    texto.includes('security purposes') ||
+    texto.includes('too many requests') ||
+    texto.includes('rate limit') ||
+    texto.includes('429')
+  ) {
+    return 'Ya enviamos un codigo hace poco. Espera un momento y vuelve a intentarlo.'
   }
 
   if (texto.includes('otp')) {
@@ -67,6 +78,7 @@ function LoginContenido() {
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState(searchParams.get('error') ?? '')
+  const [segundosReenvio, setSegundosReenvio] = useState(0)
 
   const titulo = modo === 'login' ? 'Entrar a SolarOS' : 'Crear cuenta'
   const subtitulo =
@@ -76,6 +88,39 @@ function LoginContenido() {
 
   const siguienteRuta = modo === 'signup' ? '/configuracion' : '/dashboard'
   const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    if (segundosReenvio <= 0) {
+      return
+    }
+
+    const intervalo = window.setInterval(() => {
+      setSegundosReenvio((actual) => (actual <= 1 ? 0 : actual - 1))
+    }, 1000)
+
+    return () => window.clearInterval(intervalo)
+  }, [segundosReenvio])
+
+  async function solicitarCodigoAcceso() {
+    const correo = email.trim().toLowerCase()
+
+    return supabase.auth.signInWithOtp({
+      email: correo,
+      options: {
+        shouldCreateUser: modo === 'signup',
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+          siguienteRuta
+        )}`,
+        data:
+          modo === 'signup'
+            ? {
+                nombre: nombre.trim(),
+                rol: 'admin',
+              }
+            : undefined,
+      },
+    })
+  }
 
   async function enviarCodigo(event: FormEvent) {
     event.preventDefault()
@@ -94,22 +139,7 @@ function LoginContenido() {
 
     setCargando(true)
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        shouldCreateUser: modo === 'signup',
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-          siguienteRuta
-        )}`,
-        data:
-          modo === 'signup'
-            ? {
-                nombre: nombre.trim(),
-                rol: 'admin',
-              }
-            : undefined,
-      },
-    })
+    const { error: otpError } = await solicitarCodigoAcceso()
 
     setCargando(false)
 
@@ -118,6 +148,7 @@ function LoginContenido() {
       return
     }
 
+    setSegundosReenvio(OTP_COOLDOWN_SEGUNDOS)
     setPaso('codigo')
     setMensaje(
       `Te enviamos un codigo a ${email.trim().toLowerCase()}. Escribelo aqui para continuar.`
@@ -161,6 +192,28 @@ function LoginContenido() {
     router.refresh()
   }
 
+  async function reenviarCodigo() {
+    if (segundosReenvio > 0) {
+      return
+    }
+
+    setError('')
+    setMensaje('')
+    setCargando(true)
+
+    const { error: otpError } = await solicitarCodigoAcceso()
+
+    setCargando(false)
+
+    if (otpError) {
+      setError(normalizarErrorAuth(otpError.message))
+      return
+    }
+
+    setSegundosReenvio(OTP_COOLDOWN_SEGUNDOS)
+    setMensaje(`Enviamos un nuevo codigo a ${email.trim().toLowerCase()}.`)
+  }
+
   async function continuarConGoogle() {
     setError('')
     setMensaje('')
@@ -187,6 +240,7 @@ function LoginContenido() {
     setCodigo('')
     setError('')
     setMensaje('')
+    setSegundosReenvio(0)
   }
 
   return (
@@ -363,6 +417,12 @@ function LoginContenido() {
                 </p>
               ) : null}
 
+              {mensaje ? (
+                <p className="text-[12px] text-[var(--blue)] bg-[var(--blue-bg)] px-3 py-2 rounded-[var(--radius-sm)]">
+                  {mensaje}
+                </p>
+              ) : null}
+
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -372,6 +432,7 @@ function LoginContenido() {
                     setCodigo('')
                     setError('')
                     setMensaje('')
+                    setSegundosReenvio(0)
                   }}
                 >
                   <KeyRound className="h-4 w-4" />
@@ -385,6 +446,23 @@ function LoginContenido() {
                 >
                   <ShieldCheck className="h-4 w-4" />
                   Confirmar codigo
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[12px] text-[var(--text-3)]">
+                  {segundosReenvio > 0
+                    ? `Puedes solicitar otro codigo en ${segundosReenvio}s.`
+                    : 'Si no llego el correo, puedes reenviar otro codigo ahora.'}
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="justify-start px-0 text-[13px] text-[var(--accent)] hover:bg-transparent hover:text-[var(--accent)]"
+                  onClick={reenviarCodigo}
+                  disabled={cargando || segundosReenvio > 0}
+                >
+                  Reenviar codigo
                 </Button>
               </div>
             </form>

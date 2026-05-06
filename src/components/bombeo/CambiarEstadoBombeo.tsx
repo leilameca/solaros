@@ -3,6 +3,7 @@
 import { useTransition } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ChevronDown } from 'lucide-react'
+import { toast } from 'sonner'
 import { actualizarEstadoCotizacionBombeo } from '@/app/(dashboard)/bombeo/actions'
 import { EstadoBombeoBadge } from '@/components/bombeo/EstadoBombeoBadge'
 import type { EstadoCotizacionBombeo } from '@/types/bombeo'
@@ -30,7 +31,12 @@ export function CambiarEstadoBombeo({
 
   function cambiarEstado(nuevoEstado: EstadoCotizacionBombeo) {
     startTransition(async () => {
-      await actualizarEstadoCotizacionBombeo(cotizacionId, nuevoEstado)
+      const res = await actualizarEstadoCotizacionBombeo(cotizacionId, nuevoEstado)
+      if (res?.error) {
+        toast.error(res.error)
+      } else {
+        toast.success('Estado actualizado')
+      }
     })
   }
 

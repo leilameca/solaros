@@ -55,8 +55,15 @@ export function BotonGenerarPDF(props: Props) {
     descargar(`${numeroCotizacion}.pdf`)
   }
 
+  const cotizacionId =
+    props.tipo === 'solar'
+      ? props.datos.cotizacion.id
+      : props.tipo === 'bombeo'
+      ? props.datos.cotizacion.id
+      : props.datos.cotizacion.id
+
   const handleWhatsapp = () => {
-    compartirWhatsapp(props.empresaId, numeroCotizacion)
+    compartirWhatsapp(props.empresaId, numeroCotizacion, cotizacionId, props.tipo)
   }
 
   return (

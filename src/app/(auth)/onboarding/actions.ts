@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizarErrorSupabase } from '@/lib/supabase/errores'
 import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import { PRECIO_WP_DEFAULT } from '@/lib/constants'
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024
 const TIPOS_LOGO_PERMITIDOS = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
@@ -25,7 +26,7 @@ export async function completarOnboarding(formData: FormData) {
       return { error: 'No encontramos una empresa asociada a este usuario.' }
     }
 
-    const precioWp = Number(formData.get('precio_wp') ?? 0.85)
+    const precioWp = Number(formData.get('precio_wp') ?? PRECIO_WP_DEFAULT)
     const tasaDolar = Number(formData.get('tasa_dolar') ?? 54)
     const archivo = formData.get('logo')
     const admin = createAdminClient()
@@ -66,7 +67,7 @@ export async function completarOnboarding(formData: FormData) {
       onboarding_completado: boolean
       logo_url?: string | null
     } = {
-      precio_wp: Number.isFinite(precioWp) ? precioWp : 0.85,
+      precio_wp: Number.isFinite(precioWp) ? precioWp : PRECIO_WP_DEFAULT,
       tasa_dolar: Number.isFinite(tasaDolar) ? tasaDolar : 54,
       onboarding_completado: true,
     }

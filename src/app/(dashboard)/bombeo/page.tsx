@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { Plus, Waves } from 'lucide-react'
+import { ArrowRight, Plus, Waves } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { EstadoBombeoBadge } from '@/components/bombeo/EstadoBombeoBadge'
@@ -14,8 +14,8 @@ import type {
 
 const ETIQUETAS_SISTEMA: Record<TipoSistemaBombeo, string> = {
   solar_directo: 'Solar directo',
-  solar_vfd: 'Solar con VFD',
-  electrico: 'Electrico',
+  solar_vfd: 'Solar VFD',
+  electrico: 'Eléctrico',
 }
 
 const ETIQUETAS_BOMBA: Record<TipoBomba, string> = {
@@ -78,14 +78,14 @@ export default async function BombeoPage({
             Cotizaciones de bombeo
           </h1>
           <p className="text-[13px] text-[var(--text-3)] mt-0.5">
-            {filtradas.length} cotizacion{filtradas.length !== 1 ? 'es' : ''}
+            {filtradas.length} cotización{filtradas.length !== 1 ? 'es' : ''}
           </p>
         </div>
 
         <Link href="/bombeo/nueva">
           <Button variant="accent" size="md">
             <Plus className="h-3.5 w-3.5" />
-            Nueva cotizacion
+            Nueva cotización
           </Button>
         </Link>
       </div>
@@ -108,6 +108,23 @@ export default async function BombeoPage({
   )
 }
 
+function buildUrl(
+  current: Record<string, string | undefined>,
+  override: Record<string, string | undefined>
+) {
+  const params = new URLSearchParams()
+  const merged = { ...current, ...override }
+  for (const [key, value] of Object.entries(merged)) {
+    if (value) params.set(key, value)
+  }
+  const qs = params.toString()
+  return `/bombeo${qs ? `?${qs}` : ''}`
+}
+
+const CHIP_BASE = 'text-[12px] font-medium px-3 py-1.5 rounded-sm transition-colors'
+const CHIP_ACTIVE = 'bg-[var(--text)] text-[var(--bg)]'
+const CHIP_IDLE = 'bg-[var(--surface)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]'
+
 function FiltrosBombeo({
   estadoActivo,
   tipoSistemaActivo,
@@ -119,57 +136,88 @@ function FiltrosBombeo({
   tipoBombaActiva?: TipoBomba
   busqueda?: string
 }) {
+  const current = {
+    estado: estadoActivo,
+    tipoSistema: tipoSistemaActivo,
+    tipoBomba: tipoBombaActiva,
+    q: busqueda,
+  }
+
+  const estados: { valor: EstadoCotizacionBombeo | ''; label: string }[] = [
+    { valor: '', label: 'Todos' },
+    { valor: 'borrador', label: 'Borrador' },
+    { valor: 'enviada', label: 'Enviada' },
+    { valor: 'aprobada', label: 'Aprobada' },
+    { valor: 'en_instalacion', label: 'En instalación' },
+    { valor: 'completada', label: 'Completada' },
+    { valor: 'rechazada', label: 'Rechazada' },
+  ]
+
+  const sistemas: { valor: TipoSistemaBombeo | ''; label: string }[] = [
+    { valor: '', label: 'Todos' },
+    { valor: 'solar_directo', label: 'Directo' },
+    { valor: 'solar_vfd', label: 'VFD' },
+    { valor: 'electrico', label: 'Eléctrico' },
+  ]
+
+  const bombas: { valor: TipoBomba | ''; label: string }[] = [
+    { valor: '', label: 'Todas' },
+    { valor: 'sumergible', label: 'Sumergible' },
+    { valor: 'superficial', label: 'Superficial' },
+  ]
+
   return (
-    <form className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-      <input
-        name="q"
-        defaultValue={busqueda}
-        placeholder="Buscar por cliente o numero..."
-        className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] placeholder:text-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-      />
+    <div className="flex flex-col gap-3 mb-5">
+      <form className="flex-1">
+        <input
+          name="q"
+          defaultValue={busqueda}
+          placeholder="Buscar por cliente o número..."
+          className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] placeholder:text-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+        />
+      </form>
 
-      <select
-        name="tipoSistema"
-        defaultValue={tipoSistemaActivo ?? ''}
-        className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-      >
-        <option value="">Todos los sistemas</option>
-        {Object.entries(ETIQUETAS_SISTEMA).map(([valor, label]) => (
-          <option key={valor} value={valor}>{label}</option>
-        ))}
-      </select>
+      <div className="flex flex-wrap gap-x-4 gap-y-2">
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] font-[family-name:var(--font-mono)] mr-1">Estado</span>
+          {estados.map((e) => (
+            <Link
+              key={e.valor}
+              href={buildUrl(current, { estado: e.valor || undefined })}
+              className={`${CHIP_BASE} ${(estadoActivo ?? '') === e.valor ? CHIP_ACTIVE : CHIP_IDLE}`}
+            >
+              {e.label}
+            </Link>
+          ))}
+        </div>
 
-      <select
-        name="tipoBomba"
-        defaultValue={tipoBombaActiva ?? ''}
-        className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-      >
-        <option value="">Todos los tipos de bomba</option>
-        {Object.entries(ETIQUETAS_BOMBA).map(([valor, label]) => (
-          <option key={valor} value={valor}>{label}</option>
-        ))}
-      </select>
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] font-[family-name:var(--font-mono)] mr-1">Sistema</span>
+          {sistemas.map((s) => (
+            <Link
+              key={s.valor}
+              href={buildUrl(current, { tipoSistema: s.valor || undefined })}
+              className={`${CHIP_BASE} ${(tipoSistemaActivo ?? '') === s.valor ? CHIP_ACTIVE : CHIP_IDLE}`}
+            >
+              {s.label}
+            </Link>
+          ))}
+        </div>
 
-      <div className="flex gap-2">
-        <select
-          name="estado"
-          defaultValue={estadoActivo ?? ''}
-          className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-        >
-          <option value="">Todos los estados</option>
-          <option value="borrador">Borrador</option>
-          <option value="enviada">Enviada</option>
-          <option value="aprobada">Aprobada</option>
-          <option value="en_instalacion">En instalacion</option>
-          <option value="completada">Completada</option>
-          <option value="rechazada">Rechazada</option>
-        </select>
-
-        <Button type="submit" variant="primary">
-          Filtrar
-        </Button>
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] font-[family-name:var(--font-mono)] mr-1">Bomba</span>
+          {bombas.map((b) => (
+            <Link
+              key={b.valor}
+              href={buildUrl(current, { tipoBomba: b.valor || undefined })}
+              className={`${CHIP_BASE} ${(tipoBombaActiva ?? '') === b.valor ? CHIP_ACTIVE : CHIP_IDLE}`}
+            >
+              {b.label}
+            </Link>
+          ))}
+        </div>
       </div>
-    </form>
+    </div>
   )
 }
 
@@ -180,14 +228,15 @@ function TablaBombeo({
 }) {
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-      <div className="hidden md:grid grid-cols-[1fr_140px_110px_90px_120px_110px_90px] gap-4 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
-        <HeaderCell>Cliente / Numero</HeaderCell>
+      <div className="hidden md:grid grid-cols-[1fr_140px_110px_90px_120px_110px_90px_24px] gap-4 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
+        <HeaderCell>Cliente / Número</HeaderCell>
         <HeaderCell>Sistema</HeaderCell>
         <HeaderCell>Bomba</HeaderCell>
         <HeaderCell align="right">HP</HeaderCell>
         <HeaderCell align="right">Total USD</HeaderCell>
         <HeaderCell>Estado</HeaderCell>
         <HeaderCell>Fecha</HeaderCell>
+        <span />
       </div>
 
       <div className="divide-y divide-[var(--border)]">
@@ -195,7 +244,7 @@ function TablaBombeo({
           <Link
             key={cotizacion.id}
             href={`/bombeo/${cotizacion.id}`}
-            className="block hover:bg-[var(--surface-2)] transition-colors"
+            className="group block hover:bg-[var(--surface-2)] transition-colors"
           >
             <div className="md:hidden px-4 py-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -219,7 +268,7 @@ function TablaBombeo({
               </div>
             </div>
 
-            <div className="hidden md:grid grid-cols-[1fr_140px_110px_90px_120px_110px_90px] gap-4 px-4 py-3 items-center">
+            <div className="hidden md:grid grid-cols-[1fr_140px_110px_90px_120px_110px_90px_24px] gap-4 px-4 py-3 items-center">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-[var(--text)] truncate">
                   {cotizacion.clientes?.nombre ?? 'Sin cliente'}
@@ -244,6 +293,7 @@ function TablaBombeo({
                   year: 'numeric',
                 })}
               </p>
+              <ArrowRight className="h-3.5 w-3.5 text-[var(--text-3)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </Link>
         ))}
@@ -275,18 +325,18 @@ function EstadoVacio({ tieneFiltros }: { tieneFiltros: boolean }) {
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] p-12 text-center shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
       <Waves className="h-8 w-8 text-[var(--text-3)] mx-auto mb-3" />
       <p className="text-[14px] font-medium text-[var(--text)]">
-        {tieneFiltros ? 'Sin resultados' : 'Sin cotizaciones aun'}
+        {tieneFiltros ? 'Sin resultados' : 'Sin cotizaciones aún'}
       </p>
       <p className="text-[13px] text-[var(--text-3)] mt-1 mb-4">
         {tieneFiltros
-          ? 'Ninguna cotizacion coincide con los filtros aplicados.'
-          : 'Crea tu primera cotizacion de bombeo para comenzar.'}
+          ? 'Ninguna cotización coincide con los filtros aplicados.'
+          : 'Crea tu primera cotización de bombeo para comenzar.'}
       </p>
       {!tieneFiltros && (
         <Link href="/bombeo/nueva">
           <Button variant="accent" size="md">
             <Plus className="h-3.5 w-3.5" />
-            Nueva cotizacion
+            Nueva cotización
           </Button>
         </Link>
       )}

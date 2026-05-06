@@ -252,33 +252,19 @@ export async function contarProductosStockBajo(empresaId: string) {
 }
 
 export async function obtenerMetricasInventario(empresaId: string): Promise<MetricasInventario> {
-  const productos = await obtenerProductosInventario({
-    empresaId,
-    soloActivos: true,
-  })
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('metricas_inventario', { p_empresa_id: empresaId })
 
-  return productos.reduce<MetricasInventario>(
-    (acumulado, producto) => {
-      acumulado.totalProductosActivos += 1
-      if (producto.stock_actual <= producto.stock_minimo) {
-        acumulado.productosStockBajo += 1
-      }
-
-      const precioBase =
-        producto.precio_costo_usd ??
-        producto.precio_venta_usd ??
-        producto.precio_unitario ??
-        0
-
-      acumulado.valorTotalUsd += producto.stock_actual * precioBase
-      return acumulado
-    },
-    {
-      totalProductosActivos: 0,
-      productosStockBajo: 0,
-      valorTotalUsd: 0,
+  if (!error && data && Array.isArray(data) && data.length > 0) {
+    const row = data[0] as { total_activos: number; stock_bajo: number; valor_total_usd: number }
+    return {
+      totalProductosActivos: Number(row.total_activos ?? 0),
+      productosStockBajo: Number(row.stock_bajo ?? 0),
+      valorTotalUsd: Number(row.valor_total_usd ?? 0),
     }
-  )
+  }
+
+  return { totalProductosActivos: 0, productosStockBajo: 0, valorTotalUsd: 0 }
 }
 
 export async function sugerirPaneles(kwp_necesario: number, empresa_id: string) {

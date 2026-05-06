@@ -10,6 +10,7 @@ import { MetricaCard } from '@/components/dashboard/MetricaCard'
 import { ListaUltimasCotizaciones } from '@/components/dashboard/ListaUltimasCotizaciones'
 import { DashboardAutoRefresh } from '@/components/dashboard/DashboardAutoRefresh'
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
+import { SaludoHeader } from '@/components/dashboard/SaludoHeader'
 
 function formatearPorcentaje(valor: number) {
   return `${new Intl.NumberFormat('es-DO', {
@@ -53,26 +54,23 @@ async function DashboardContenido() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
-        <div>
-          <h1 className="text-[24px] font-medium text-[var(--text)] tracking-[-0.03em]">
-            {data.saludo}, {data.usuario.nombre}
-          </h1>
-          <p className="text-[13px] text-[var(--text-3)] mt-1">{data.fechaLarga}</p>
-        </div>
+        <SaludoHeader nombre={data.usuario.nombre} />
         <DashboardAutoRefresh />
       </div>
 
       {esTecnico ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <MetricaCard
-            label="Proyectos en instalacion"
+            label="Proyectos en instalación"
             valor={data.metricas.proyectosEnInstalacion.toString()}
-            descripcion="Cotizaciones activas en ejecucion"
+            descripcion="Cotizaciones activas en ejecución"
+            acento="amber"
           />
           <MetricaCard
             label="Stock bajo"
             valor={data.metricas.stockBajo.toString()}
             descripcion="Productos que requieren seguimiento"
+            acento={data.metricas.stockBajo > 0 ? 'red' : 'default'}
           />
         </div>
       ) : (
@@ -82,21 +80,25 @@ async function DashboardContenido() {
               label="Cotizaciones este mes"
               valor={data.metricas.cotizacionesEsteMes.toString()}
               descripcion="Total creadas en el mes actual"
+              acento="blue"
             />
             <MetricaCard
               label="Clientes nuevos"
               valor={data.metricas.clientesNuevos.toString()}
               descripcion="Altas recientes en el CRM"
+              acento="default"
             />
             <MetricaCard
               label="Aprobadas"
               valor={data.metricas.aprobadasEsteMes.toString()}
               descripcion="Cotizaciones aprobadas en el mes"
+              acento="green"
             />
             <MetricaCard
-              label="Tasa conversion"
+              label="Tasa conversión"
               valor={formatearPorcentaje(data.metricas.tasaConversion)}
               descripcion="Aprobadas sobre cotizaciones del mes"
+              acento={data.metricas.tasaConversion >= 50 ? 'green' : data.metricas.tasaConversion > 0 ? 'amber' : 'default'}
             />
           </div>
 
@@ -105,11 +107,13 @@ async function DashboardContenido() {
               label="Valor pipeline USD"
               valor={formatearUSD(data.metricas.valorPipelineUsd)}
               descripcion="Cotizaciones en borrador o enviadas"
+              acento="amber"
             />
             <MetricaCard
               label="Valor cerrado este mes USD"
               valor={formatearUSD(data.metricas.valorCerradoMesUsd)}
-              descripcion="Aprobadas, en instalacion o completadas"
+              descripcion="Aprobadas, en instalación o completadas"
+              acento="green"
             />
           </div>
         </>
@@ -138,11 +142,11 @@ async function DashboardContenido() {
       ) : null}
 
       <ListaUltimasCotizaciones
-        titulo={esTecnico ? 'Proyectos en instalacion' : 'Ultimas cotizaciones'}
+        titulo={esTecnico ? 'Proyectos en instalación' : 'Últimas cotizaciones'}
         descripcion={
           esTecnico
-            ? 'Solo se muestran proyectos listos para seguimiento tecnico.'
-            : 'Las cinco cotizaciones mas recientes de cualquier modulo.'
+            ? 'Solo se muestran proyectos listos para seguimiento técnico.'
+            : 'Las cinco cotizaciones más recientes de cualquier módulo.'
         }
         cotizaciones={data.ultimasCotizaciones}
         mostrarMonto={!esTecnico}

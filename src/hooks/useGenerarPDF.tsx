@@ -138,7 +138,12 @@ export function useGenerarPDF() {
 
   // ─── Compartir por WhatsApp ───────────────────────────────────────────────
   const compartirWhatsapp = useCallback(
-    async (empresaId: string, numeroCotizacion: string): Promise<void> => {
+    async (
+      empresaId: string,
+      numeroCotizacion: string,
+      cotizacionId: string,
+      tipo: 'solar' | 'bombeo' | 'electrico'
+    ): Promise<void> => {
       if (!blobRef.current) return
       try {
         const supabase = createClient()
@@ -159,6 +164,18 @@ export function useGenerarPDF() {
           .getPublicUrl(data.path)
 
         const urlPublica = urlData.publicUrl
+
+        const { data: { user } } = await supabase.auth.getUser()
+        await supabase.from('propuestas_generadas').insert({
+          empresa_id: empresaId,
+          tipo,
+          cotizacion_id: cotizacionId,
+          numero_cotizacion: numeroCotizacion,
+          storage_path: data.path,
+          url_publica: urlPublica,
+          generado_por: user?.id ?? null,
+        })
+
         const mensaje = encodeURIComponent(
           `Propuesta ${numeroCotizacion}: ${urlPublica}`
         )

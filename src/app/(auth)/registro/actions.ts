@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sumarMeses, TEXTO_TERMINOS_PDF_SUGERIDO } from '@/lib/configuracion'
 import { PLANES_SOLAR_OS } from '@/lib/configuracion'
 import { normalizarErrorSupabase } from '@/lib/supabase/errores'
+import { PRECIO_WP_DEFAULT } from '@/lib/constants'
 
 export async function crearEmpresaRegistro(input: {
   nombreEmpresa: string
@@ -29,7 +30,7 @@ export async function crearEmpresaRegistro(input: {
         telefono: input.telefono?.trim() || null,
         email: input.emailEmpresa?.trim() || null,
         color_primario: '#C8860A',
-        precio_wp: 0.85,
+        precio_wp: PRECIO_WP_DEFAULT,
         tasa_dolar: 54,
         terminos_pdf: TEXTO_TERMINOS_PDF_SUGERIDO,
         plan_actual: 'basico',

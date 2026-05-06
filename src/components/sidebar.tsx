@@ -25,10 +25,10 @@ function esRutaActiva(pathname: string, href: string) {
 function resolverTituloMovil(pathname: string) {
   if (pathname.startsWith('/cotizaciones')) return 'Cotizaciones solar'
   if (pathname.startsWith('/bombeo')) return 'Bombeo'
-  if (pathname.startsWith('/electrico')) return 'Electrico'
+  if (pathname.startsWith('/electrico')) return 'Eléctrico'
   if (pathname.startsWith('/clientes')) return 'Clientes'
   if (pathname.startsWith('/inventario')) return 'Inventario'
-  if (pathname.startsWith('/configuracion')) return 'Configuracion'
+  if (pathname.startsWith('/configuracion')) return 'Configuración'
   if (pathname.startsWith('/admin')) return 'Super admin'
   return 'Dashboard'
 }
@@ -46,13 +46,13 @@ function resolverNavItems({
     { href: '/dashboard', label: 'Dashboard', mobileLabel: 'Inicio', icon: LayoutDashboard },
     { href: '/cotizaciones', label: 'Cotizaciones solar', mobileLabel: 'Solar', icon: FileText },
     { href: '/bombeo', label: 'Bombeo', mobileLabel: 'Bombeo', icon: Droplets },
-    { href: '/electrico', label: 'Electrico', mobileLabel: 'Electrico', icon: Zap },
+    { href: '/electrico', label: 'Eléctrico', mobileLabel: 'Eléctrico', icon: Zap },
     { href: '/clientes', label: 'Clientes', mobileLabel: 'CRM', icon: Users },
     ...(tieneInventario
       ? [{ href: '/inventario', label: 'Inventario', mobileLabel: 'Stock', icon: Package }]
       : []),
     ...((esSuperadmin || esAdminEmpresa)
-      ? [{ href: '/configuracion', label: 'Configuracion', mobileLabel: 'Ajustes', icon: Settings }]
+      ? [{ href: '/configuracion', label: 'Configuración', mobileLabel: 'Ajustes', icon: Settings }]
       : []),
     ...(esSuperadmin
       ? [{ href: '/admin', label: 'Super admin', mobileLabel: 'Admin', icon: Shield }]

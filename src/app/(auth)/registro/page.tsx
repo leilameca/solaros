@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Building2, Mail, ShieldCheck } from 'lucide-react'
@@ -20,6 +20,27 @@ import { sincronizarUsuarioAutenticado } from '@/app/(auth)/login/actions'
 
 type PasoRegistro = 1 | 2 | 3
 
+const OTP_COOLDOWN_SEGUNDOS = 60
+
+function normalizarErrorAuth(mensaje: string) {
+  const texto = mensaje.toLowerCase()
+
+  if (
+    texto.includes('security purposes') ||
+    texto.includes('too many requests') ||
+    texto.includes('rate limit') ||
+    texto.includes('429')
+  ) {
+    return 'Ya enviamos un codigo hace poco. Espera un momento y vuelve a intentarlo.'
+  }
+
+  if (texto.includes('otp')) {
+    return 'El codigo no es valido o ya vencio. Solicita uno nuevo.'
+  }
+
+  return mensaje
+}
+
 export default function RegistroPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -28,6 +49,7 @@ export default function RegistroPage() {
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
   const [empresaId, setEmpresaId] = useState<string | null>(null)
+  const [segundosReenvio, setSegundosReenvio] = useState(0)
 
   const [form, setForm] = useState({
     nombreEmpresa: '',
@@ -40,8 +62,35 @@ export default function RegistroPage() {
     codigo: '',
   })
 
+  useEffect(() => {
+    if (segundosReenvio <= 0) {
+      return
+    }
+
+    const intervalo = window.setInterval(() => {
+      setSegundosReenvio((actual) => (actual <= 1 ? 0 : actual - 1))
+    }, 1000)
+
+    return () => window.clearInterval(intervalo)
+  }, [segundosReenvio])
+
   function actualizar<K extends keyof typeof form>(campo: K, valor: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [campo]: valor }))
+  }
+
+  async function solicitarCodigoAcceso(empresaObjetivoId: string) {
+    return supabase.auth.signInWithOtp({
+      email: form.emailAdmin.trim().toLowerCase(),
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/onboarding')}`,
+        data: {
+          empresa_id: empresaObjetivoId,
+          nombre: form.nombreAdmin.trim(),
+          rol: 'admin',
+        },
+      },
+    })
   }
 
   async function avanzarEmpresa(event: FormEvent) {
@@ -94,26 +143,22 @@ export default function RegistroPage() {
       setEmpresaId(empresaCreadaId)
     }
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: form.emailAdmin.trim().toLowerCase(),
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/onboarding')}`,
-        data: {
-          empresa_id: empresaCreadaId,
-          nombre: form.nombreAdmin.trim(),
-          rol: 'admin',
-        },
-      },
-    })
+    if (!empresaCreadaId) {
+      setCargando(false)
+      setError('No pudimos preparar la empresa para enviar el codigo.')
+      return
+    }
+
+    const { error: otpError } = await solicitarCodigoAcceso(empresaCreadaId)
 
     setCargando(false)
 
     if (otpError) {
-      setError(otpError.message)
+      setError(normalizarErrorAuth(otpError.message))
       return
     }
 
+    setSegundosReenvio(OTP_COOLDOWN_SEGUNDOS)
     setPaso(3)
     setMensaje(`Te enviamos un codigo a ${form.emailAdmin.trim().toLowerCase()}.`)
   }
@@ -137,7 +182,7 @@ export default function RegistroPage() {
 
     if (verifyError) {
       setCargando(false)
-      setError(verifyError.message)
+      setError(normalizarErrorAuth(verifyError.message))
       return
     }
 
@@ -152,6 +197,28 @@ export default function RegistroPage() {
 
     router.push('/onboarding')
     router.refresh()
+  }
+
+  async function reenviarCodigo() {
+    if (!empresaId || segundosReenvio > 0) {
+      return
+    }
+
+    setError('')
+    setMensaje('')
+    setCargando(true)
+
+    const { error: otpError } = await solicitarCodigoAcceso(empresaId)
+
+    setCargando(false)
+
+    if (otpError) {
+      setError(normalizarErrorAuth(otpError.message))
+      return
+    }
+
+    setSegundosReenvio(OTP_COOLDOWN_SEGUNDOS)
+    setMensaje(`Enviamos un nuevo codigo a ${form.emailAdmin.trim().toLowerCase()}.`)
   }
 
   return (
@@ -332,14 +399,45 @@ export default function RegistroPage() {
                 </p>
               ) : null}
 
+              {mensaje ? (
+                <p className="text-[12px] text-[var(--blue)] bg-[var(--blue-bg)] px-3 py-2 rounded-[var(--radius-sm)]">
+                  {mensaje}
+                </p>
+              ) : null}
+
               <div className="flex items-center gap-3">
-                <Button type="button" variant="secondary" onClick={() => setPaso(2)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setPaso(2)
+                    setSegundosReenvio(0)
+                    setMensaje('')
+                  }}
+                >
                   <ArrowLeft className="h-4 w-4" />
                   Volver
                 </Button>
                 <Button type="submit" variant="accent" className="flex-1" loading={cargando}>
                   <ShieldCheck className="h-4 w-4" />
                   Confirmar y continuar
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[12px] text-[var(--text-3)]">
+                  {segundosReenvio > 0
+                    ? `Puedes solicitar otro codigo en ${segundosReenvio}s.`
+                    : 'Si no llego el correo, puedes reenviar otro codigo ahora.'}
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="justify-start px-0 text-[13px] text-[var(--accent)] hover:bg-transparent hover:text-[var(--accent)]"
+                  onClick={reenviarCodigo}
+                  disabled={cargando || segundosReenvio > 0 || !empresaId}
+                >
+                  Reenviar codigo
                 </Button>
               </div>
             </form>

@@ -105,7 +105,7 @@ export default async function ElectricoPage({
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="flex flex-col gap-3 mb-5">
         <form className="flex-1">
           <input
             name="q"
@@ -114,20 +114,27 @@ export default async function ElectricoPage({
             className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] placeholder:text-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
         </form>
-        <div className="flex gap-1 flex-wrap">
-          {estados.map((e) => (
-            <Link
-              key={e.valor}
-              href={e.valor ? `?estado=${e.valor}` : '/electrico'}
-              className={`text-[12px] font-medium px-3 py-1.5 rounded-sm transition-colors ${
-                (searchParams.estado ?? '') === e.valor
-                  ? 'bg-[var(--text)] text-[var(--bg)]'
-                  : 'bg-[var(--surface)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]'
-              }`}
-            >
-              {e.label}
-            </Link>
-          ))}
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] font-[family-name:var(--font-mono)] mr-1">Estado</span>
+          {estados.map((e) => {
+            const params = new URLSearchParams()
+            if (e.valor) params.set('estado', e.valor)
+            if (searchParams.q) params.set('q', searchParams.q)
+            const qs = params.toString()
+            return (
+              <Link
+                key={e.valor}
+                href={`/electrico${qs ? `?${qs}` : ''}`}
+                className={`text-[12px] font-medium px-3 py-1.5 rounded-sm transition-colors ${
+                  (searchParams.estado ?? '') === e.valor
+                    ? 'bg-[var(--text)] text-[var(--bg)]'
+                    : 'bg-[var(--surface)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]'
+                }`}
+              >
+                {e.label}
+              </Link>
+            )
+          })}
         </div>
       </div>
 

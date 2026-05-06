@@ -74,7 +74,7 @@ export const DESCUENTO_LEY5707 = 0.38
 export const ANOS_LEY5707 = 3
 export const PANEL_W_DEFAULT = 550
 export const TASA_DOLAR_DEFAULT = 54
-export const PRECIO_WP_DEFAULT = 0.65
+export const PRECIO_WP_DEFAULT = 0.85
 
 export const PROVINCIAS_RD = [
   'Azua',

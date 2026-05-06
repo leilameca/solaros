@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Sans, DM_Mono } from 'next/font/google'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 const dmSans = DM_Sans({
@@ -30,6 +31,18 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${dmMono.variable} font-[family-name:var(--font-sans)] antialiased`}>
         {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+              fontSize: '13px',
+              fontFamily: 'var(--font-sans)',
+            },
+          }}
+        />
       </body>
     </html>
   )

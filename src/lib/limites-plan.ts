@@ -34,7 +34,7 @@ export async function verificarLimiteCotizacionesMes(empresaId: string) {
       .eq('empresa_id', empresaId)
       .gte('created_at', desde),
     supabase
-      .from('cotizaciones_electrico')
+      .from('cotizaciones_electricas')
       .select('id', { count: 'exact', head: true })
       .eq('empresa_id', empresaId)
       .gte('created_at', desde),

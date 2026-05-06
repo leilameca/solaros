@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { BadgeEstado } from '@/components/ui/badge'
-import { Plus, FileText } from 'lucide-react'
+import { ArrowRight, Plus, FileText } from 'lucide-react'
 import { formatearUSD, formatearNumero } from '@/lib/calculos'
 import { ETIQUETAS_SISTEMA } from '@/lib/constants'
 import type { Cotizacion, EstadoCotizacion, TipoSistema } from '@/types/cotizaciones'
@@ -93,14 +93,31 @@ export default async function CotizacionesPage({
   )
 }
 
+function buildUrl(current: Record<string, string | undefined>, override: Record<string, string | undefined>) {
+  const params = new URLSearchParams()
+  const merged = { ...current, ...override }
+  for (const [key, value] of Object.entries(merged)) {
+    if (value) params.set(key, value)
+  }
+  const qs = params.toString()
+  return `/cotizaciones${qs ? `?${qs}` : ''}`
+}
+
+const CHIP_BASE = 'text-[12px] font-medium px-3 py-1.5 rounded-sm transition-colors'
+const CHIP_ACTIVE = 'bg-[var(--text)] text-[var(--bg)]'
+const CHIP_IDLE = 'bg-[var(--surface)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]'
+
 function FiltrosCotizaciones({
   estadoActivo,
+  tipoActivo,
   busqueda,
 }: {
   estadoActivo?: string
   tipoActivo?: string
   busqueda?: string
 }) {
+  const current = { estado: estadoActivo, tipo: tipoActivo, q: busqueda }
+
   const estados: { valor: EstadoCotizacion | ''; label: string }[] = [
     { valor: '', label: 'Todos' },
     { valor: 'borrador', label: 'Borrador' },
@@ -112,8 +129,7 @@ function FiltrosCotizaciones({
   ]
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 mb-5">
-      {/* Búsqueda */}
+    <div className="flex flex-col gap-3 mb-5">
       <form className="flex-1">
         <input
           name="q"
@@ -123,17 +139,13 @@ function FiltrosCotizaciones({
         />
       </form>
 
-      {/* Filtro estado */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1 flex-wrap items-center">
+        <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] font-[family-name:var(--font-mono)] mr-1">Estado</span>
         {estados.map((e) => (
           <Link
             key={e.valor}
-            href={e.valor ? `?estado=${e.valor}` : '/cotizaciones'}
-            className={`text-[12px] font-medium px-3 py-1.5 rounded-sm transition-colors ${
-              (estadoActivo ?? '') === e.valor
-                ? 'bg-[var(--text)] text-[var(--bg)]'
-                : 'bg-[var(--surface)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]'
-            }`}
+            href={buildUrl(current, { estado: e.valor || undefined })}
+            className={`${CHIP_BASE} ${(estadoActivo ?? '') === e.valor ? CHIP_ACTIVE : CHIP_IDLE}`}
           >
             {e.label}
           </Link>
@@ -150,8 +162,7 @@ function TablaCotizaciones({
 }) {
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-      {/* Header tabla — solo desktop */}
-      <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_100px_90px] gap-4 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
+      <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_100px_90px_24px] gap-4 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
         <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
           Cliente / Número
         </p>
@@ -170,15 +181,15 @@ function TablaCotizaciones({
         <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
           Fecha
         </p>
+        <span />
       </div>
 
-      {/* Filas */}
       <div className="divide-y divide-[var(--border)]">
         {cotizaciones.map((cot) => (
           <Link
             key={cot.id}
             href={`/cotizaciones/${cot.id}`}
-            className="block hover:bg-[var(--surface-2)] transition-colors"
+            className="group block hover:bg-[var(--surface-2)] transition-colors"
           >
             {/* Mobile */}
             <div className="md:hidden px-4 py-3 flex items-start justify-between gap-3">
@@ -208,8 +219,7 @@ function TablaCotizaciones({
               </div>
             </div>
 
-            {/* Desktop */}
-            <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_100px_90px] gap-4 px-4 py-3 items-center">
+            <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_100px_90px_24px] gap-4 px-4 py-3 items-center">
               <div className="min-w-0">
                 <p className="text-[13px] font-medium text-[var(--text)] truncate">
                   {cot.clientes?.nombre ?? 'Sin cliente'}
@@ -236,6 +246,7 @@ function TablaCotizaciones({
                   year: 'numeric',
                 })}
               </p>
+              <ArrowRight className="h-3.5 w-3.5 text-[var(--text-3)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </Link>
         ))}

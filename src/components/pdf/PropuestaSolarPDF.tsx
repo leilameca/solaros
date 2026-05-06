@@ -136,7 +136,7 @@ export function PropuestaSolarPDF({ datos }: Props) {
               <Metrica
                 label="Retorno estimado"
                 valor={`${cot.retorno_sin_ley ?? '—'} años`}
-                sub={cot.ley_5707_activa ? `${cot.retorno_con_ley} años con Ley 57-07` : 'Sin Ley 57-07'}
+                sub={cot.ley_5707_activa ? `${cot.retorno_con_ley ?? 0} años con Ley 57-07` : 'Sin Ley 57-07'}
               />
             </View>
           </View>
@@ -241,7 +241,7 @@ export function PropuestaSolarPDF({ datos }: Props) {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.metricaLabel, { color: C.verde }]}>Retorno con ley</Text>
-                    <Text style={[s.metricaValorAcento, {}]}>{cot.retorno_con_ley} años</Text>
+                    <Text style={[s.metricaValorAcento, {}]}>{cot.retorno_con_ley ?? 0} años</Text>
                   </View>
                 </View>
                 <Text style={{ fontSize: 7.5, color: C.verde, marginTop: 4 }}>

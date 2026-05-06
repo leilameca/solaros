@@ -89,65 +89,55 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
     }
   }
 
-  const { data: cotizacion, error } = await supabase
-    .from('cotizaciones')
-    .insert({
-      empresa_id: empresaId,
-      cliente_id: clienteId,
-      numero_cotizacion: numeroCot ?? `COT-${Date.now()}`,
-      tipo_sistema: input.tipoSistema,
-      provincia: input.provincia,
-      tarifa: input.tarifa,
-      kwh_mensual: input.kwhMensual,
-      horas_sol: resultado.horasSol,
-      kwp_calculado: resultado.kwpReal,
-      generacion_mensual: resultado.generacionMensual,
-      generacion_anual: resultado.generacionAnual,
-      panel_marca: input.panelMarca || null,
-      panel_modelo: input.panelModelo || null,
-      panel_potencia_w: input.panelPotenciaW || null,
-      panel_cantidad: resultado.cantidadPaneles,
-      inversor_marca: input.inversorMarca || null,
-      inversor_modelo: input.inversorModelo || null,
-      inversor_kw: input.inversorKw || null,
-      inversor_cantidad: input.inversorCantidad || null,
-      precio_wp: precioWp,
-      total_usd: resultado.totalUsd,
-      ley_5707_activa: input.ley5707Activa,
-      inversion_neta_usd: ley5707?.inversionNetaUsd ?? null,
-      retorno_con_ley: ley5707?.retornoConLey ?? null,
-      retorno_sin_ley: resultado.retornoSinLey,
-      ahorro_mensual_rd: resultado.ahorroMensualRd,
-      ahorro_anual_usd: resultado.ahorroAnualUsd,
-      tasa_dolar: tasaDolar,
-      estado: 'borrador',
-      notas: input.notas || null,
-      created_by: user.id,
-    })
-    .select('id')
-    .single()
-
-  if (error || !cotizacion) {
-    return { error: normalizarErrorSupabase(error?.message) }
-  }
-
   const consumoMensual = resultado.meses.map((mes) => ({
-    cotizacion_id: cotizacion.id,
     mes: mes.mes,
     consumo_kwh: mes.consumo,
     generacion_kwh: mes.generacion,
   }))
 
-  const { error: consumoError } = await supabase
-    .from('cotizacion_consumo_mensual')
-    .insert(consumoMensual)
+  const { data: cotizacionId, error } = await supabase.rpc(
+    'crear_cotizacion_con_consumo',
+    {
+      p_empresa_id:         empresaId,
+      p_cliente_id:         clienteId,
+      p_numero_cotizacion:  numeroCot ?? `COT-${Date.now()}`,
+      p_tipo_sistema:       input.tipoSistema,
+      p_provincia:          input.provincia,
+      p_tarifa:             input.tarifa,
+      p_kwh_mensual:        input.kwhMensual,
+      p_horas_sol:          resultado.horasSol,
+      p_kwp_calculado:      resultado.kwpReal,
+      p_generacion_mensual: resultado.generacionMensual,
+      p_generacion_anual:   resultado.generacionAnual,
+      p_panel_marca:        input.panelMarca || null,
+      p_panel_modelo:       input.panelModelo || null,
+      p_panel_potencia_w:   input.panelPotenciaW || null,
+      p_panel_cantidad:     resultado.cantidadPaneles,
+      p_inversor_marca:     input.inversorMarca || null,
+      p_inversor_modelo:    input.inversorModelo || null,
+      p_inversor_kw:        input.inversorKw || null,
+      p_inversor_cantidad:  input.inversorCantidad || null,
+      p_precio_wp:          precioWp,
+      p_total_usd:          resultado.totalUsd,
+      p_ley_5707_activa:    input.ley5707Activa,
+      p_inversion_neta_usd: ley5707?.inversionNetaUsd ?? null,
+      p_retorno_con_ley:    ley5707?.retornoConLey ?? null,
+      p_retorno_sin_ley:    resultado.retornoSinLey,
+      p_ahorro_mensual_rd:  resultado.ahorroMensualRd,
+      p_ahorro_anual_usd:   resultado.ahorroAnualUsd,
+      p_tasa_dolar:         tasaDolar,
+      p_notas:              input.notas || null,
+      p_created_by:         user.id,
+      p_consumo_mensual:    consumoMensual,
+    }
+  )
 
-  if (consumoError) {
-    return { error: normalizarErrorSupabase(consumoError.message) }
+  if (error || !cotizacionId) {
+    return { error: normalizarErrorSupabase(error?.message) }
   }
 
   revalidatePath('/cotizaciones')
-  redirect(`/cotizaciones/${cotizacion.id}`)
+  redirect(`/cotizaciones/${cotizacionId}`)
 }
 
 export async function actualizarEstadoCotizacion(

@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { actualizarEstadoCotizacionElectrica } from '@/app/(dashboard)/electrico/actions'
 import { Button } from '@/components/ui/button'
 import { ChevronDown } from 'lucide-react'
@@ -31,8 +32,13 @@ export function CambiarEstadoElectrico({ cotizacionId, estadoActual }: Props) {
 
   function cambiar(nuevoEstado: EstadoCotizacionElectrica) {
     startTransition(async () => {
-      await actualizarEstadoCotizacionElectrica(cotizacionId, nuevoEstado)
-      router.refresh()
+      const res = await actualizarEstadoCotizacionElectrica(cotizacionId, nuevoEstado)
+      if (res?.error) {
+        toast.error(res.error)
+      } else {
+        toast.success('Estado actualizado')
+        router.refresh()
+      }
     })
   }
 

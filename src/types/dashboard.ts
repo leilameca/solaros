@@ -10,7 +10,7 @@ export interface UsuarioDashboard {
 
 export interface CotizacionRecienteDashboard {
   tipo: TipoCotizacionDashboard
-  tipo_label: 'Solar' | 'Bombeo' | 'Electrico'
+  tipo_label: 'Solar' | 'Bombeo' | 'Eléctrico'
   cotizacion_id: string
   numero_cotizacion: string
   cliente_nombre: string
@@ -33,8 +33,6 @@ export interface MetricasDashboard {
 
 export interface DashboardData {
   usuario: UsuarioDashboard
-  saludo: string
-  fechaLarga: string
   metricas: MetricasDashboard
   ultimasCotizaciones: CotizacionRecienteDashboard[]
 }

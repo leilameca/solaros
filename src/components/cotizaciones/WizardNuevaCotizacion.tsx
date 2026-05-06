@@ -2,6 +2,7 @@
 
 import { type ReactNode, useState, useTransition } from 'react'
 import { ChevronLeft, ChevronRight, Check, Sun, TrendingUp, Zap } from 'lucide-react'
+import { toast } from 'sonner'
 import { useCalculo } from '@/hooks/useCalculo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -124,7 +125,7 @@ export function WizardNuevaCotizacion({
     const nuevosErrores: Partial<Record<keyof FormData, string>> = {}
     if (!form.nombreTitular.trim()) nuevosErrores.nombreTitular = 'El nombre es requerido'
     if (!form.provincia) nuevosErrores.provincia = 'Selecciona una provincia'
-    if (!form.tarifa) nuevosErrores.tarifa = 'Selecciona la tarifa electrica'
+    if (!form.tarifa) nuevosErrores.tarifa = 'Selecciona la tarifa eléctrica'
     if (!form.tipoSistema) nuevosErrores.tipoSistema = 'Selecciona el tipo de sistema'
     setErrores(nuevosErrores)
     return Object.keys(nuevosErrores).length === 0
@@ -169,7 +170,7 @@ export function WizardNuevaCotizacion({
 
   function enviar() {
     if (!esValido || !form.tarifa || !form.tipoSistema) {
-      setErrorSubmit('Completa los datos requeridos antes de guardar la cotizacion.')
+      setErrorSubmit('Completa los datos requeridos antes de guardar la cotización.')
       return
     }
 
@@ -198,6 +199,7 @@ export function WizardNuevaCotizacion({
 
       if (response?.error) {
         setErrorSubmit(response.error)
+        toast.error(response.error)
       }
     })
   }
@@ -320,7 +322,7 @@ function Paso1({
     <div className="p-6">
       <h2 className="text-[15px] font-medium text-[var(--text)] mb-1">Datos del cliente</h2>
       <p className="text-[13px] text-[var(--text-3)] mb-6">
-        Informacion basica del titular y tipo de instalacion.
+        Información básica del titular y tipo de instalación.
       </p>
 
       {clienteInicial ? (
@@ -329,7 +331,7 @@ function Paso1({
             Cliente prellenado desde CRM
           </p>
           <p className="text-[12px] text-[var(--blue)] mt-1">
-            Puedes ajustar los datos antes de guardar la cotizacion.
+            Puedes ajustar los datos antes de guardar la cotización.
           </p>
         </div>
       ) : null}
@@ -346,7 +348,7 @@ function Paso1({
         </div>
 
         <Input
-          label="Numero de contrato electrico"
+          label="Número de contrato eléctrico"
           placeholder="12345678"
           value={form.numeroContrato}
           onChange={(e) => actualizar('numeroContrato', e.target.value)}
@@ -422,7 +424,7 @@ function Paso2({
       <div>
         <h2 className="text-[15px] font-medium text-[var(--text)] mb-1">Consumo y equipo</h2>
         <p className="text-[13px] text-[var(--text-3)]">
-          Ingresa el consumo mensual y revisa el calculo automatico.
+          Ingresa el consumo mensual y revisa el cálculo automático.
         </p>
       </div>
 
@@ -437,7 +439,7 @@ function Paso2({
             actualizar('kwhMensual', e.target.value === '' ? '' : Number(e.target.value))
           }
           error={errores.kwhMensual}
-          hint="Dato de la factura electrica del cliente"
+          hint="Dato de la factura eléctrica del cliente"
         />
 
         <Input
@@ -459,7 +461,7 @@ function Paso2({
       {resultado ? (
         <div className="bg-[var(--accent-bg)] border border-[var(--accent-bd)] rounded-[var(--radius)] p-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--accent)] font-[family-name:var(--font-mono)] mb-3">
-            Calculo automatico
+            Cálculo automático
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <MetricaCalculo
@@ -475,7 +477,7 @@ function Paso2({
               icon={<Zap className="h-3.5 w-3.5" />}
             />
             <MetricaCalculo
-              label="Generacion mensual"
+              label="Generación mensual"
               valor={formatearNumero(resultado.generacionMensual, 0)}
               unidad="KWh"
               icon={<Sun className="h-3.5 w-3.5" />}
@@ -633,7 +635,7 @@ function Paso3({
       <div>
         <h2 className="text-[15px] font-medium text-[var(--text)] mb-1">Resumen financiero</h2>
         <p className="text-[13px] text-[var(--text-3)]">
-          Revisa los numeros antes de guardar la cotizacion.
+          Revisa los números antes de guardar la cotización.
         </p>
       </div>
 
@@ -648,7 +650,7 @@ function Paso3({
           label="Generacion mensual"
           valor={formatearNumero(resultado.generacionMensual, 0)}
           unidad="KWh"
-          subtitulo={`${formatearNumero(resultado.generacionAnual, 0)} KWh/ano`}
+          subtitulo={`${formatearNumero(resultado.generacionAnual, 0)} KWh/año`}
         />
         <TarjetaMetrica
           label="Ahorro mensual"
@@ -730,7 +732,7 @@ function Paso3({
 
       <Textarea
         label="Notas (opcional)"
-        placeholder="Observaciones adicionales para esta cotizacion..."
+        placeholder="Observaciones adicionales para esta cotización..."
         value={form.notas}
         onChange={(e) => actualizar('notas', e.target.value)}
         rows={3}

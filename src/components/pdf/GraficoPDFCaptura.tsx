@@ -27,13 +27,12 @@ export function GraficoPDFCaptura({ datos, cotizacionId }: Props) {
     }))
 
   return (
-    // Posicionado fuera de pantalla: visible para html2canvas, invisible al usuario
     <div
       id={`grafico-pdf-${cotizacionId}`}
       style={{
-        position: 'fixed',
-        left: '-9999px',
-        top: 0,
+        position: 'absolute',
+        opacity: 0,
+        pointerEvents: 'none',
         width: '700px',
         height: '320px',
         background: '#FAFAF8',

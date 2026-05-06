@@ -3,6 +3,7 @@
 import { useState, useId, useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, BookOpen, Check, Zap } from 'lucide-react'
+import { toast } from 'sonner'
 import { TablaMateriales } from './TablaMateriales'
 import { PanelCatalogo } from './PanelCatalogo'
 import { ResumenTotales } from './ResumenTotales'
@@ -142,6 +143,7 @@ export function WizardNuevoElectrico({
       })
       if (resultado?.error) {
         setErrorGuardar(resultado.error)
+        toast.error(resultado.error)
       }
     })
   }

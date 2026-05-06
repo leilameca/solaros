@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { ConfiguracionEmpresaClient } from '@/components/configuracion/ConfiguracionEmpresaClient'
 import { ConfiguracionSkeleton } from '@/components/configuracion/ConfiguracionSkeleton'
 import { LIMITE_USUARIOS } from '@/lib/configuracion'
+import { PRECIO_WP_DEFAULT } from '@/lib/constants'
 import { createClient, obtenerUsuarioActual } from '@/lib/supabase/server'
 import type {
   ConfiguracionEmpresaData,
@@ -25,7 +26,7 @@ const EMPRESA_VACIA: EmpresaConfiguracion = {
   cargo_representante: '',
   logo_url: null,
   color_primario: '#C8860A',
-  precio_wp: 0.85,
+  precio_wp: PRECIO_WP_DEFAULT,
   tasa_dolar: 54,
   terminos_pdf: '',
   plan_actual: 'basico',
@@ -93,7 +94,7 @@ async function ConfiguracionContenido() {
         cargo_representante: empresaResult.data.cargo_representante ?? '',
         logo_url: empresaResult.data.logo_url ?? null,
         color_primario: empresaResult.data.color_primario ?? '#C8860A',
-        precio_wp: Number(empresaResult.data.precio_wp ?? 0.85),
+        precio_wp: Number(empresaResult.data.precio_wp ?? PRECIO_WP_DEFAULT),
         tasa_dolar: Number(empresaResult.data.tasa_dolar ?? 54),
         terminos_pdf: empresaResult.data.terminos_pdf ?? '',
         plan_actual: (empresaResult.data.plan_actual ?? 'pro') as PlanSuscripcionEmpresa,
@@ -144,10 +145,10 @@ async function ConfiguracionContenido() {
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-[24px] font-medium text-[var(--text)] tracking-[-0.03em]">
-          Configuracion
+          Configuración
         </h1>
         <p className="text-[13px] text-[var(--text-3)]">
-          Datos de empresa, apariencia, operativo, usuarios y suscripcion.
+          Datos de empresa, apariencia, operativo, usuarios y suscripción.
         </p>
       </div>
 

@@ -13,14 +13,14 @@ export const TABS_CONFIGURACION: Array<{
   { id: 'apariencia', label: 'Apariencia' },
   { id: 'operativo', label: 'Operativo' },
   { id: 'usuarios', label: 'Usuarios' },
-  { id: 'suscripcion', label: 'Suscripcion' },
+  { id: 'suscripcion', label: 'Suscripción' },
   { id: 'tutorial', label: 'Tutorial' },
 ]
 
 export const COLORES_ACENTO = [
   { valor: '#C8860A', label: 'Dorado solar' },
-  { valor: '#1A7A4A', label: 'Verde energia' },
-  { valor: '#1B5FA8', label: 'Azul tecnico' },
+  { valor: '#1A7A4A', label: 'Verde energía' },
+  { valor: '#1B5FA8', label: 'Azul técnico' },
   { valor: '#7C3AED', label: 'Violeta moderno' },
   { valor: '#DC2626', label: 'Rojo corporativo' },
   { valor: '#0F766E', label: 'Teal profesional' },
@@ -51,7 +51,7 @@ export const PLANES_SOLAR_OS: Record<
     usuarios: '1',
     cotizacionesMes: '50',
     propuestasMes: '50',
-    incluyeBombeo: 'Si',
+    incluyeBombeo: 'Sí',
     incluyeInventario: 'No',
     soporte: 'Email',
   },
@@ -60,8 +60,8 @@ export const PLANES_SOLAR_OS: Record<
     usuarios: '5',
     cotizacionesMes: 'Ilimitadas',
     propuestasMes: 'Ilimitadas',
-    incluyeBombeo: 'Si',
-    incluyeInventario: 'Si',
+    incluyeBombeo: 'Sí',
+    incluyeInventario: 'Sí',
     soporte: 'Prioritario',
   },
   enterprise: {
@@ -69,8 +69,8 @@ export const PLANES_SOLAR_OS: Record<
     usuarios: 'Ilimitados',
     cotizacionesMes: 'Ilimitadas',
     propuestasMes: 'Ilimitadas',
-    incluyeBombeo: 'Si',
-    incluyeInventario: 'Si',
+    incluyeBombeo: 'Sí',
+    incluyeInventario: 'Sí',
     soporte: 'Dedicado',
   },
 }
@@ -78,7 +78,7 @@ export const PLANES_SOLAR_OS: Record<
 export const ETIQUETAS_ROL_USUARIO: Record<RolUsuarioEmpresa, string> = {
   admin: 'Admin',
   vendedor: 'Vendedor',
-  tecnico: 'Tecnico',
+  tecnico: 'Técnico',
 }
 
 export const VARIANTES_ROL_USUARIO: Record<RolUsuarioEmpresa, 'warning' | 'info' | 'default'> = {
@@ -96,9 +96,9 @@ export const ETIQUETAS_ESTADO_SUSCRIPCION: Record<EstadoSuscripcionEmpresa, stri
 }
 
 export const TEXTO_TERMINOS_PDF_SUGERIDO =
-  'Esta propuesta tiene una validez de 30 dias a partir de la fecha de emision.\n' +
-  'Los precios estan sujetos a variacion segun disponibilidad de equipos.\n' +
-  'La instalacion incluye garantia de 1 ano en mano de obra.'
+  'Esta propuesta tiene una validez de 30 días a partir de la fecha de emisión.\n' +
+  'Los precios están sujetos a variación según disponibilidad de equipos.\n' +
+  'La instalación incluye garantía de 1 año en mano de obra.'
 
 export function formatearFechaLargaConfiguracion(valor: string | null) {
   if (!valor) return 'Sin fecha'
@@ -122,7 +122,7 @@ export function formatearUSDConfiguracion(valor: number | null) {
 export function capitalizarPlan(plan: PlanSuscripcionEmpresa) {
   if (plan === 'enterprise') return 'Enterprise'
   if (plan === 'pro') return 'Pro'
-  return 'Basico'
+  return 'Básico'
 }
 
 export function sumarMeses(fecha: Date, meses: number) {

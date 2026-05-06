@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, obtenerConfigEmpresa, obtenerEmpresaId } from '@/lib/supabase/server'
 import { FormularioOnboarding } from '@/components/auth/FormularioOnboarding'
+import { PRECIO_WP_DEFAULT } from '@/lib/constants'
 
 export default async function OnboardingPage() {
   const supabase = createClient()
@@ -28,7 +29,7 @@ export default async function OnboardingPage() {
     <FormularioOnboarding
       empresa={{
         nombre: config?.nombre_empresa ?? 'Tu empresa',
-        precio_wp: Number(config?.precio_wp ?? 0.85),
+        precio_wp: Number(config?.precio_wp ?? PRECIO_WP_DEFAULT),
         tasa_dolar: Number(config?.tasa_dolar ?? 54),
         logo_url: config?.logo_url ?? null,
       }}

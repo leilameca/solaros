@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { LayoutGrid, List, Mail, MessageCircle, Phone, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PipelineKanban } from '@/components/clientes/PipelineKanban'
 import { ETAPAS_PIPELINE, ETIQUETAS_ETAPA_PIPELINE, ESTILOS_ETAPA_PIPELINE, construirWhatsappLink, limpiarTelefono, normalizarTextoBusqueda } from '@/lib/clientes'
 import { actualizarEtapaCliente } from '@/app/(dashboard)/clientes/actions'
@@ -55,6 +58,7 @@ export function ClientesView({
       const response = await actualizarEtapaCliente(clienteId, etapa)
       if (response?.error) {
         setClientes(anterior)
+        toast.error(response.error)
       }
     })
   }
@@ -63,23 +67,25 @@ export function ClientesView({
     <div className="space-y-5">
       <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
         <div className="flex-1 flex flex-col sm:flex-row gap-3">
-          <input
+          <Input
             value={busquedaInput}
             onChange={(e) => setBusquedaInput(e.target.value)}
-            placeholder="Buscar por nombre, telefono o contrato..."
-            className="w-full bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] placeholder:text-[var(--text-3)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+            placeholder="Buscar por nombre, teléfono o contrato..."
           />
 
-          <select
-            value={filtroEtapa}
-            onChange={(e) => setFiltroEtapa(e.target.value as 'todos' | EtapaPipeline)}
-            className="w-full sm:w-[220px] bg-[var(--surface)] border border-[var(--border-s)] rounded-sm px-3 py-2 text-[13px] text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-          >
-            <option value="todos">Todas las etapas</option>
-            {ETAPAS_PIPELINE.map((etapa) => (
-              <option key={etapa} value={etapa}>{ETIQUETAS_ETAPA_PIPELINE[etapa]}</option>
-            ))}
-          </select>
+          <div className="w-full sm:w-[220px] flex-shrink-0">
+            <Select value={filtroEtapa} onValueChange={(v) => setFiltroEtapa(v as 'todos' | EtapaPipeline)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas las etapas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas las etapas</SelectItem>
+                {ETAPAS_PIPELINE.map((etapa) => (
+                  <SelectItem key={etapa} value={etapa}>{ETIQUETAS_ETAPA_PIPELINE[etapa]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -154,7 +160,7 @@ function ClienteFila({ cliente }: { cliente: ClienteCRM }) {
   return (
     <Link
       href={`/clientes/${cliente.id}`}
-      className="block bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:bg-[var(--surface-2)] transition-colors"
+      className="group block bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:border-[var(--border)] transition-all"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
@@ -185,7 +191,8 @@ function ClienteFila({ cliente }: { cliente: ClienteCRM }) {
             <a
               href={`tel:${cliente.telefono}`}
               onClick={(event) => event.stopPropagation()}
-              className="flex items-center justify-center h-8 w-8 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-2)] hover:text-[var(--text)]"
+              className="flex items-center justify-center h-8 w-8 rounded-[var(--radius-sm)] bg-[var(--surface-2)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface)] hover:text-[var(--text)] transition-colors"
+              title="Llamar"
             >
               <Phone className="h-3.5 w-3.5" />
             </a>
@@ -196,7 +203,8 @@ function ClienteFila({ cliente }: { cliente: ClienteCRM }) {
               target="_blank"
               rel="noreferrer"
               onClick={(event) => event.stopPropagation()}
-              className="flex items-center justify-center h-8 w-8 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-2)] hover:text-[var(--text)]"
+              className="flex items-center justify-center h-8 w-8 rounded-[var(--radius-sm)] bg-[var(--surface-2)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface)] hover:text-[var(--text)] transition-colors"
+              title="WhatsApp"
             >
               <MessageCircle className="h-3.5 w-3.5" />
             </a>
@@ -205,7 +213,8 @@ function ClienteFila({ cliente }: { cliente: ClienteCRM }) {
             <a
               href={`mailto:${cliente.email}`}
               onClick={(event) => event.stopPropagation()}
-              className="flex items-center justify-center h-8 w-8 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-2)] hover:text-[var(--text)]"
+              className="flex items-center justify-center h-8 w-8 rounded-[var(--radius-sm)] bg-[var(--surface-2)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface)] hover:text-[var(--text)] transition-colors"
+              title="Email"
             >
               <Mail className="h-3.5 w-3.5" />
             </a>

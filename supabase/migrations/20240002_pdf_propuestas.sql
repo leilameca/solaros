@@ -27,11 +27,11 @@ CREATE INDEX IF NOT EXISTS propuestas_generadas_cotizacion_idx
 ALTER TABLE propuestas_generadas ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "empresa_propuestas_generadas" ON propuestas_generadas
-  USING (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid);
+  USING (empresa_id = public.mi_empresa_id());
 
 CREATE POLICY "empresa_propuestas_generadas_insert" ON propuestas_generadas
   FOR INSERT
-  WITH CHECK (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid);
+  WITH CHECK (empresa_id = public.mi_empresa_id());
 
 -- ============================================================
 -- STORAGE BUCKET

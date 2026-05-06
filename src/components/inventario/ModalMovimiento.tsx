@@ -2,6 +2,7 @@
 
 import { startTransition, useMemo, useState, useTransition } from 'react'
 import { ArrowDownLeft, ArrowUpRight, TriangleAlert, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -143,8 +144,10 @@ export function ModalMovimiento({
       if (respuesta?.error) {
         onMovimientoFallido?.(movimientoOptimista)
         setError(respuesta.error)
+        toast.error(respuesta.error)
         return
       }
+      toast.success('Movimiento registrado')
 
       onMovimientoConfirmado?.({
         temporalId: movimientoOptimista.temporalId,

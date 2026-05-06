@@ -11,6 +11,7 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizarErrorSupabase } from '@/lib/supabase/errores'
 import { createClient } from '@/lib/supabase/server'
+import { PRECIO_WP_DEFAULT } from '@/lib/constants'
 import type {
   ActualizarUsuarioEmpresaInput,
   GuardarEmpresaInput,
@@ -150,7 +151,7 @@ export async function guardarDatosEmpresa(
         .insert({
           ...payloadEmpresa,
           color_primario: '#C8860A',
-          precio_wp: 0.85,
+          precio_wp: PRECIO_WP_DEFAULT,
           tasa_dolar: 54,
           terminos_pdf: TEXTO_TERMINOS_PDF_SUGERIDO,
           plan_actual: 'basico',

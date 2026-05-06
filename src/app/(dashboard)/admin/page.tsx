@@ -28,7 +28,7 @@ export default async function AdminPage() {
     admin.from('usuarios').select('empresa_id'),
     admin.from('cotizaciones').select('empresa_id, created_at'),
     admin.from('cotizaciones_bombeo').select('empresa_id, created_at'),
-    admin.from('cotizaciones_electrico').select('empresa_id, created_at'),
+    admin.from('cotizaciones_electricas').select('empresa_id, created_at'),
   ])
 
   const usuariosPorEmpresa = new Map<string, number>()
@@ -74,7 +74,7 @@ export default async function AdminPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-[24px] font-medium text-[var(--text)] tracking-[-0.03em]">
-          Panel super admin
+          Panel súper admin
         </h1>
         <p className="text-[13px] text-[var(--text-3)]">
           Vista global del SaaS para {SUPERADMIN_EMAIL}.
