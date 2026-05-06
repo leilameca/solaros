@@ -3,20 +3,29 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import {
+  MENSAJE_EMPRESA_NO_CONFIGURADA,
+  normalizarErrorSupabase,
+} from '@/lib/supabase/errores'
+import { verificarLimiteCotizacionesMes } from '@/lib/limites-plan'
 import { calcularSistema, calcularLey5707 } from '@/lib/calculos'
 import { PRECIO_WP_DEFAULT, TASA_DOLAR_DEFAULT } from '@/lib/constants'
-import type { NuevaCotizacionInput, EstadoCotizacion } from '@/types/cotizaciones'
+import type { EstadoCotizacion, NuevaCotizacionInput } from '@/types/cotizaciones'
 
 export async function crearCotizacion(input: NuevaCotizacionInput) {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const empresaId = await obtenerEmpresaId()
-  if (!empresaId) redirect('/login')
+  if (!empresaId) return { error: MENSAJE_EMPRESA_NO_CONFIGURADA }
 
-  // Obtener configuración de la empresa
+  const limitePlan = await verificarLimiteCotizacionesMes(empresaId)
+  if (!limitePlan.ok) return { error: limitePlan.error }
+
   const { data: empresa } = await supabase
     .from('empresas')
     .select('precio_wp, tasa_dolar')
@@ -26,7 +35,6 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
   const precioWp = empresa?.precio_wp ?? PRECIO_WP_DEFAULT
   const tasaDolar = empresa?.tasa_dolar ?? TASA_DOLAR_DEFAULT
 
-  // Calcular sistema
   const resultado = calcularSistema({
     kwhMensual: input.kwhMensual,
     provincia: input.provincia,
@@ -36,17 +44,21 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
     tasaDolar,
   })
 
-  // Calcular Ley 57-07 si aplica
   const ley5707 = input.ley5707Activa
     ? calcularLey5707(resultado.totalUsd, resultado.ahorroAnualUsd)
     : null
 
-  // Generar número de cotización
-  const { data: numeroCot } = await supabase
-    .rpc('generar_numero_cotizacion', { p_empresa_id: empresaId })
+  const { data: numeroCot, error: numeroCotError } = await supabase.rpc(
+    'generar_numero_cotizacion',
+    { p_empresa_id: empresaId }
+  )
 
-  // Crear o encontrar cliente
+  if (numeroCotError) {
+    return { error: normalizarErrorSupabase(numeroCotError.message) }
+  }
+
   let clienteId: string | null = input.clienteId ?? null
+
   if (!clienteId && input.nombreTitular) {
     const { data: clienteExistente } = await supabase
       .from('clientes')
@@ -58,7 +70,7 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
     if (clienteExistente) {
       clienteId = clienteExistente.id
     } else {
-      const { data: nuevoCliente } = await supabase
+      const { data: nuevoCliente, error: nuevoClienteError } = await supabase
         .from('clientes')
         .insert({
           empresa_id: empresaId,
@@ -68,11 +80,15 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
         })
         .select('id')
         .single()
+
+      if (nuevoClienteError) {
+        return { error: normalizarErrorSupabase(nuevoClienteError.message) }
+      }
+
       clienteId = nuevoCliente?.id ?? null
     }
   }
 
-  // Insertar cotización
   const { data: cotizacion, error } = await supabase
     .from('cotizaciones')
     .insert({
@@ -112,10 +128,9 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
     .single()
 
   if (error || !cotizacion) {
-    return { error: error?.message ?? 'Error al crear cotización' }
+    return { error: normalizarErrorSupabase(error?.message) }
   }
 
-  // Insertar consumo mensual
   const consumoMensual = resultado.meses.map((mes) => ({
     cotizacion_id: cotizacion.id,
     mes: mes.mes,
@@ -123,7 +138,13 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
     generacion_kwh: mes.generacion,
   }))
 
-  await supabase.from('cotizacion_consumo_mensual').insert(consumoMensual)
+  const { error: consumoError } = await supabase
+    .from('cotizacion_consumo_mensual')
+    .insert(consumoMensual)
+
+  if (consumoError) {
+    return { error: normalizarErrorSupabase(consumoError.message) }
+  }
 
   revalidatePath('/cotizaciones')
   redirect(`/cotizaciones/${cotizacion.id}`)
@@ -135,7 +156,9 @@ export async function actualizarEstadoCotizacion(
 ) {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
   const { error } = await supabase
@@ -143,7 +166,7 @@ export async function actualizarEstadoCotizacion(
     .update({ estado: nuevoEstado, updated_at: new Date().toISOString() })
     .eq('id', cotizacionId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: normalizarErrorSupabase(error.message) }
 
   revalidatePath(`/cotizaciones/${cotizacionId}`)
   revalidatePath('/cotizaciones')
@@ -153,7 +176,9 @@ export async function actualizarEstadoCotizacion(
 export async function eliminarCotizacion(cotizacionId: string) {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
   const { error } = await supabase
@@ -161,7 +186,7 @@ export async function eliminarCotizacion(cotizacionId: string) {
     .delete()
     .eq('id', cotizacionId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: normalizarErrorSupabase(error.message) }
 
   revalidatePath('/cotizaciones')
   return { ok: true }

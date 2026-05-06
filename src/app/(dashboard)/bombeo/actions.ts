@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import {
+  MENSAJE_EMPRESA_NO_CONFIGURADA,
+  normalizarErrorSupabase,
+} from '@/lib/supabase/errores'
+import { verificarLimiteCotizacionesMes } from '@/lib/limites-plan'
 import type { EstadoCotizacionBombeo, NuevaCotizacionBombeoInput } from '@/types/bombeo'
 
 const HORAS_BOMBEO_SOLAR = 6
@@ -47,7 +52,10 @@ export async function crearCotizacionBombeo(input: NuevaCotizacionBombeoInput) {
   if (!user) redirect('/login')
 
   const empresaId = await obtenerEmpresaId()
-  if (!empresaId) redirect('/login')
+  if (!empresaId) return { error: MENSAJE_EMPRESA_NO_CONFIGURADA }
+
+  const limitePlan = await verificarLimiteCotizacionesMes(empresaId)
+  if (!limitePlan.ok) return { error: limitePlan.error }
 
   const resultado = calcularResultadoBombeo({
     tipoSistema: input.tipoSistema,
@@ -66,9 +74,13 @@ export async function crearCotizacionBombeo(input: NuevaCotizacionBombeoInput) {
       : numeroSeguro(input.panelPrecioUnit) * numeroSeguro(input.panelCantidad)) +
     (input.tipoSistema === 'solar_vfd' ? numeroSeguro(input.vfdPrecio) : 0)
 
-  const { data: numeroCotizacion } = await supabase.rpc('generar_numero_cotizacion_bombeo', {
+  const { data: numeroCotizacion, error: numeroCotizacionError } = await supabase.rpc('generar_numero_cotizacion_bombeo', {
     p_empresa_id: empresaId,
   })
+
+  if (numeroCotizacionError) {
+    return { error: normalizarErrorSupabase(numeroCotizacionError.message) }
+  }
 
   let clienteId = input.clienteId
 
@@ -83,7 +95,7 @@ export async function crearCotizacionBombeo(input: NuevaCotizacionBombeoInput) {
     if (clienteExistente) {
       clienteId = clienteExistente.id
     } else {
-      const { data: clienteNuevo } = await supabase
+      const { data: clienteNuevo, error: clienteNuevoError } = await supabase
         .from('clientes')
         .insert({
           empresa_id: empresaId,
@@ -92,6 +104,10 @@ export async function crearCotizacionBombeo(input: NuevaCotizacionBombeoInput) {
         })
         .select('id')
         .single()
+
+      if (clienteNuevoError) {
+        return { error: normalizarErrorSupabase(clienteNuevoError.message) }
+      }
 
       clienteId = clienteNuevo?.id ?? null
     }
@@ -137,7 +153,7 @@ export async function crearCotizacionBombeo(input: NuevaCotizacionBombeoInput) {
     .single()
 
   if (error || !cotizacion) {
-    return { error: error?.message ?? 'Error al crear la cotizacion de bombeo' }
+    return { error: normalizarErrorSupabase(error?.message) }
   }
 
   revalidatePath('/bombeo')
@@ -161,7 +177,7 @@ export async function actualizarEstadoCotizacionBombeo(
     .eq('id', cotizacionId)
 
   if (error) {
-    return { error: error.message }
+    return { error: normalizarErrorSupabase(error.message) }
   }
 
   revalidatePath('/bombeo')

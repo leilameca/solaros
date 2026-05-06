@@ -26,6 +26,18 @@ function sugerirPorPotencia(items: ItemInventarioBombeo[], potenciaKw: number) {
   return ordenados.find((item) => (item.potencia_kw ?? 0) >= potenciaKw) ?? ordenados[0]
 }
 
+function sugerirBombaPorPotencia(items: ItemInventarioBombeo[], potenciaHp: number, potenciaKw: number) {
+  const ordenados = [...items].sort(
+    (a, b) => (a.potencia_hp ?? a.potencia_kw ?? 0) - (b.potencia_hp ?? b.potencia_kw ?? 0)
+  )
+
+  return (
+    ordenados.find((item) => (item.potencia_hp ?? 0) >= potenciaHp) ??
+    ordenados.find((item) => (item.potencia_kw ?? 0) >= potenciaKw) ??
+    ordenados[0]
+  )
+}
+
 export function SelectorEquipoBombeo({
   bombas,
   paneles,
@@ -47,7 +59,7 @@ export function SelectorEquipoBombeo({
   valores: SelectorEquipoValores
   onChange: <K extends keyof SelectorEquipoValores>(campo: K, valor: SelectorEquipoValores[K]) => void
 }) {
-  const bombaSugerida = sugerirPorPotencia(bombas, potenciaKw)
+  const bombaSugerida = sugerirBombaPorPotencia(bombas, potenciaHp, potenciaKw)
   const panelSugerido = paneles[0]
   const vfdSugerido = sugerirPorPotencia(vfds, potenciaKw)
   const panelCantidadSugerida = calcularCantidadPanelesBombeo(
@@ -70,7 +82,7 @@ export function SelectorEquipoBombeo({
                 onClick={() => {
                   onChange('bombaMarca', item.marca)
                   onChange('bombaModelo', item.modelo)
-                  onChange('bombaHp', item.potencia_kw ? Number((item.potencia_kw / 0.746).toFixed(1)) : potenciaHp)
+                  onChange('bombaHp', item.potencia_hp ?? (item.potencia_kw ? Number((item.potencia_kw / 0.746).toFixed(1)) : potenciaHp))
                   onChange('bombaPrecio', item.precio_unitario ?? '')
                 }}
                 className="text-[11px] font-medium px-2.5 py-1 rounded-sm bg-[var(--surface-2)] text-[var(--text-2)] border border-[var(--border)] hover:bg-[var(--blue-bg)] hover:text-[var(--blue)] hover:border-[var(--blue)] transition-colors"
@@ -84,7 +96,7 @@ export function SelectorEquipoBombeo({
                 onClick={() => {
                   onChange('bombaMarca', bombaSugerida.marca)
                   onChange('bombaModelo', bombaSugerida.modelo)
-                  onChange('bombaHp', bombaSugerida.potencia_kw ? Number((bombaSugerida.potencia_kw / 0.746).toFixed(1)) : potenciaHp)
+                  onChange('bombaHp', bombaSugerida.potencia_hp ?? (bombaSugerida.potencia_kw ? Number((bombaSugerida.potencia_kw / 0.746).toFixed(1)) : potenciaHp))
                   onChange('bombaPrecio', bombaSugerida.precio_unitario ?? '')
                 }}
                 className="text-[11px] font-medium px-2.5 py-1 rounded-sm bg-[var(--accent-bg)] text-[var(--accent)] border border-[var(--accent-bd)]"

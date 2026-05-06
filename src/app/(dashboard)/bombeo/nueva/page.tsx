@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import { obtenerProductosInventario } from '@/lib/inventario'
 import { WizardNuevaCotizacionBombeo } from '@/components/bombeo/WizardNuevaCotizacionBombeo'
 
 export default async function NuevaCotizacionBombeoPage({
@@ -17,7 +18,7 @@ export default async function NuevaCotizacionBombeoPage({
   if (!empresaId) redirect('/login')
   const clienteId = typeof searchParams?.cliente_id === 'string' ? searchParams.cliente_id : null
 
-  const [{ data: empresa }, { data: clientes }, { data: inventario }, { data: clienteInicial }] = await Promise.all([
+  const [{ data: empresa }, { data: clientes }, inventario, { data: clienteInicial }] = await Promise.all([
     supabase
       .from('empresas')
       .select('nombre_empresa, tasa_dolar, logo_url, email, telefono')
@@ -28,12 +29,11 @@ export default async function NuevaCotizacionBombeoPage({
       .select('id, nombre, email, telefono, numero_contrato, provincia')
       .order('nombre')
       .limit(100),
-    supabase
-      .from('inventario')
-      .select('id, tipo, marca, modelo, potencia_w, potencia_kw, precio_unitario, stock, notas')
-      .in('tipo', ['panel', 'inversor', 'otro'])
-      .gt('stock', 0)
-      .order('marca'),
+    obtenerProductosInventario({
+      empresaId,
+      categorias: ['panel_solar', 'inversor', 'vfd', 'bomba', 'otro'],
+      soloActivos: true,
+    }),
     clienteId
       ? supabase
           .from('clientes')
@@ -43,9 +43,13 @@ export default async function NuevaCotizacionBombeoPage({
       : Promise.resolve({ data: null }),
   ])
 
-  const paneles = (inventario ?? []).filter((item) => item.tipo === 'panel')
-  const vfds = (inventario ?? []).filter((item) => item.tipo === 'inversor')
-  const bombas = (inventario ?? []).filter((item) => item.tipo === 'otro')
+  const paneles = inventario.filter((item) => item.categoria === 'panel_solar' && item.stock_actual > 0)
+  const vfds = inventario.filter(
+    (item) => (item.categoria === 'vfd' || item.categoria === 'inversor') && item.stock_actual > 0
+  )
+  const bombas = inventario.filter(
+    (item) => (item.categoria === 'bomba' || item.categoria === 'otro') && item.stock_actual > 0
+  )
 
   return (
     <div>

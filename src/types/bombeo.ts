@@ -40,13 +40,22 @@ export interface ClienteBombeo {
 
 export interface ItemInventarioBombeo {
   id: string
+  categoria?: 'panel_solar' | 'inversor' | 'bateria' | 'bomba' | 'vfd' | 'material_electrico' | 'accesorio' | 'otro'
   tipo: 'panel' | 'inversor' | 'bateria' | 'otro'
   marca: string
   modelo: string
+  descripcion?: string | null
   potencia_w: number | null
   potencia_kw: number | null
+  potencia_hp?: number | null
+  voltaje?: number | null
+  capacidad_kwh?: number | null
   precio_unitario: number | null
   stock: number
+  stock_actual?: number
+  stock_minimo?: number
+  unidad?: string
+  activo?: boolean
   notas: string | null
 }
 

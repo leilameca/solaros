@@ -1,6 +1,7 @@
 import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
 import { WizardNuevaCotizacion } from '@/components/cotizaciones/WizardNuevaCotizacion'
 import { PRECIO_WP_DEFAULT, TASA_DOLAR_DEFAULT } from '@/lib/constants'
+import { obtenerProductosInventario } from '@/lib/inventario'
 import { redirect } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -41,16 +42,14 @@ export default async function NuevaCotizacionPage({
     logo_url: empresa?.logo_url ?? null,
   }
 
-  // Inventario de paneles e inversores
-  const { data: inventario } = await supabase
-    .from('inventario')
-    .select('id, tipo, marca, modelo, potencia_w, potencia_kw, precio_unitario, stock')
-    .in('tipo', ['panel', 'inversor'])
-    .gt('stock', 0)
-    .order('marca')
+  const inventario = await obtenerProductosInventario({
+    empresaId,
+    categorias: ['panel_solar', 'inversor'],
+    soloActivos: true,
+  })
 
-  const paneles = (inventario ?? []).filter((i) => i.tipo === 'panel')
-  const inversores = (inventario ?? []).filter((i) => i.tipo === 'inversor')
+  const paneles = inventario.filter((item) => item.categoria === 'panel_solar' && item.stock_actual > 0)
+  const inversores = inventario.filter((item) => item.categoria === 'inversor' && item.stock_actual > 0)
 
   return (
     <div>

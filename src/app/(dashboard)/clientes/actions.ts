@@ -3,13 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import {
+  MENSAJE_EMPRESA_NO_CONFIGURADA,
+  normalizarErrorSupabase,
+} from '@/lib/supabase/errores'
 import type { ClienteNota, EtapaPipeline, NuevaClienteInput } from '@/types/clientes'
 
 export async function crearCliente(input: NuevaClienteInput) {
   const supabase = createClient()
   const empresaId = await obtenerEmpresaId()
 
-  if (!empresaId) redirect('/login')
+  if (!empresaId) return { error: MENSAJE_EMPRESA_NO_CONFIGURADA }
 
   const {
     data: { user },
@@ -34,7 +38,7 @@ export async function crearCliente(input: NuevaClienteInput) {
     .single()
 
   if (error || !cliente) {
-    return { error: error?.message ?? 'No se pudo crear el cliente' }
+    return { error: normalizarErrorSupabase(error?.message) }
   }
 
   revalidatePath('/clientes')
@@ -45,7 +49,7 @@ export async function actualizarEtapaCliente(clienteId: string, etapa: EtapaPipe
   const supabase = createClient()
   const empresaId = await obtenerEmpresaId()
 
-  if (!empresaId) return { error: 'No autenticado' }
+  if (!empresaId) return { error: MENSAJE_EMPRESA_NO_CONFIGURADA }
 
   const { error } = await supabase
     .from('clientes')
@@ -53,7 +57,7 @@ export async function actualizarEtapaCliente(clienteId: string, etapa: EtapaPipe
     .eq('id', clienteId)
     .eq('empresa_id', empresaId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: normalizarErrorSupabase(error.message) }
 
   revalidatePath('/clientes')
   revalidatePath(`/clientes/${clienteId}`)
@@ -65,7 +69,7 @@ export async function crearNotaCliente(clienteId: string, nota: string) {
   const empresaId = await obtenerEmpresaId()
 
   if (!empresaId) {
-    return { error: 'No autenticado' }
+    return { error: MENSAJE_EMPRESA_NO_CONFIGURADA }
   }
 
   const {
@@ -93,7 +97,7 @@ export async function crearNotaCliente(clienteId: string, nota: string) {
     .single()
 
   if (error || !notaCreada) {
-    return { error: error?.message ?? 'No se pudo guardar la nota' }
+    return { error: normalizarErrorSupabase(error?.message) }
   }
 
   const { data: usuario } = await supabase
