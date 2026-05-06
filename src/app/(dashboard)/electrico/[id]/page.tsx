@@ -1,10 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, obtenerConfigEmpresa } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ChevronLeft, FileDown, ExternalLink } from 'lucide-react'
+import { ChevronLeft, ExternalLink } from 'lucide-react'
+import { BotonGenerarPDF } from '@/components/pdf/BotonGenerarPDF'
 import { formatearRD2, ITBIS_RATE } from '@/lib/calculos-electrico'
 import { CambiarEstadoElectrico } from '@/components/electrico/CambiarEstadoElectrico'
 import type {
@@ -33,24 +34,30 @@ export default async function DetalleElectricoPage({
 }) {
   const supabase = createClient()
 
-  const { data: cotizacion, error } = await supabase
-    .from('cotizaciones_electricas')
-    .select(
-      `*,
-       clientes(nombre, telefono, email),
-       cotizaciones(numero_cotizacion),
-       cotizaciones_bombeo(numero_cotizacion)`
-    )
-    .eq('id', params.id)
-    .single()
+  const [
+    { data: cotizacion, error },
+    { data: itemsData },
+    empresaConfig,
+  ] = await Promise.all([
+    supabase
+      .from('cotizaciones_electricas')
+      .select(
+        `*,
+         clientes(nombre, telefono, email),
+         cotizaciones(numero_cotizacion),
+         cotizaciones_bombeo(numero_cotizacion)`
+      )
+      .eq('id', params.id)
+      .single(),
+    supabase
+      .from('items_cotizacion_electrica')
+      .select('*')
+      .eq('cotizacion_id', params.id)
+      .order('orden'),
+    obtenerConfigEmpresa(),
+  ])
 
   if (error || !cotizacion) notFound()
-
-  const { data: itemsData } = await supabase
-    .from('items_cotizacion_electrica')
-    .select('*')
-    .eq('cotizacion_id', params.id)
-    .order('orden')
 
   const cot = cotizacion as unknown as CotizacionElectrica & {
     clientes: { nombre: string; telefono: string | null; email: string | null } | null
@@ -96,10 +103,24 @@ export default async function DetalleElectricoPage({
             cotizacionId={cot.id}
             estadoActual={cot.estado}
           />
-          <Button variant="secondary" size="sm">
-            <FileDown className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">PDF</span>
-          </Button>
+          {empresaConfig && (
+            <BotonGenerarPDF
+              tipo="electrico"
+              empresaId={empresaConfig.id}
+              datos={{
+                cotizacion: cot,
+                items,
+                empresa: {
+                  id: empresaConfig.id,
+                  nombre_empresa: empresaConfig.nombre_empresa,
+                  logo_url: empresaConfig.logo_url,
+                  email: empresaConfig.email ?? null,
+                  telefono: empresaConfig.telefono ?? null,
+                  tasa_dolar: empresaConfig.tasa_dolar,
+                },
+              }}
+            />
+          )}
         </div>
       </div>
 

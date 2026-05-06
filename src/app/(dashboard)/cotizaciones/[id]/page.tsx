@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, obtenerConfigEmpresa } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { BadgeEstado } from '@/components/ui/badge'
@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { GraficoGeneracion } from '@/components/cotizaciones/GraficoGeneracion'
 import { CambiarEstado } from '@/components/cotizaciones/CambiarEstado'
+import { BotonGenerarPDF } from '@/components/pdf/BotonGenerarPDF'
 import { formatearUSD, formatearRD, formatearNumero } from '@/lib/calculos'
 import { ETIQUETAS_SISTEMA, ETIQUETAS_TARIFA, NOMBRES_MESES } from '@/lib/constants'
 import type { Cotizacion, ConsumoMensual, EstadoCotizacion, TipoSistema, TipoTarifa } from '@/types/cotizaciones'
-import { ChevronLeft, Edit, FileDown } from 'lucide-react'
+import { ChevronLeft, Edit } from 'lucide-react'
 
 export default async function DetalleCotizacionPage({
   params,
@@ -18,24 +19,26 @@ export default async function DetalleCotizacionPage({
 }) {
   const supabase = createClient()
 
-  const { data: cotizacion, error } = await supabase
-    .from('cotizaciones')
-    .select('*, clientes(nombre, telefono, email)')
-    .eq('id', params.id)
-    .single()
+  const [{ data: cotizacion, error }, consumoResult, empresaConfig] = await Promise.all([
+    supabase
+      .from('cotizaciones')
+      .select('*, clientes(nombre, telefono, email, numero_contrato)')
+      .eq('id', params.id)
+      .single(),
+    supabase
+      .from('cotizacion_consumo_mensual')
+      .select('*')
+      .eq('cotizacion_id', params.id)
+      .order('mes'),
+    obtenerConfigEmpresa(),
+  ])
 
   if (error || !cotizacion) notFound()
 
-  const { data: consumoMensual } = await supabase
-    .from('cotizacion_consumo_mensual')
-    .select('*')
-    .eq('cotizacion_id', params.id)
-    .order('mes')
-
   const cot = cotizacion as unknown as Cotizacion & {
-    clientes: { nombre: string; telefono: string | null; email: string | null } | null
+    clientes: { nombre: string; telefono: string | null; email: string | null; numero_contrato: string | null } | null
   }
-  const meses = (consumoMensual ?? []) as ConsumoMensual[]
+  const meses = (consumoResult.data ?? []) as ConsumoMensual[]
 
   return (
     <div>
@@ -75,10 +78,24 @@ export default async function DetalleCotizacionPage({
               <span className="hidden sm:inline">Editar</span>
             </Button>
           </Link>
-          <Button variant="secondary" size="sm">
-            <FileDown className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">PDF</span>
-          </Button>
+          {empresaConfig && (
+            <BotonGenerarPDF
+              tipo="solar"
+              empresaId={empresaConfig.id}
+              datos={{
+                cotizacion: cot,
+                consumoMensual: meses,
+                empresa: {
+                  id: empresaConfig.id,
+                  nombre_empresa: empresaConfig.nombre_empresa,
+                  logo_url: empresaConfig.logo_url,
+                  email: empresaConfig.email ?? null,
+                  telefono: empresaConfig.telefono ?? null,
+                  tasa_dolar: empresaConfig.tasa_dolar,
+                },
+              }}
+            />
+          )}
         </div>
       </div>
 

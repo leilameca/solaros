@@ -1,14 +1,15 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft, Edit, FileDown } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { ChevronLeft, Edit } from 'lucide-react'
+import { createClient, obtenerConfigEmpresa } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { CambiarEstadoBombeo } from '@/components/bombeo/CambiarEstadoBombeo'
 import { DesglosePrecio } from '@/components/bombeo/DesglosePrecio'
 import { EstadoBombeoBadge } from '@/components/bombeo/EstadoBombeoBadge'
 import { IndicadorCaudal } from '@/components/bombeo/IndicadorCaudal'
 import { ResumenTecnico } from '@/components/bombeo/ResumenTecnico'
+import { BotonGenerarPDF } from '@/components/pdf/BotonGenerarPDF'
 import { formatearUSD } from '@/lib/calculos'
 import type { CotizacionBombeo } from '@/types/bombeo'
 
@@ -19,11 +20,14 @@ export default async function DetalleCotizacionBombeoPage({
 }) {
   const supabase = createClient()
 
-  const { data, error } = await supabase
-    .from('cotizaciones_bombeo')
-    .select('*, clientes(nombre, telefono, email)')
-    .eq('id', params.id)
-    .single()
+  const [{ data, error }, empresaConfig] = await Promise.all([
+    supabase
+      .from('cotizaciones_bombeo')
+      .select('*, clientes(nombre, telefono, email)')
+      .eq('id', params.id)
+      .single(),
+    obtenerConfigEmpresa(),
+  ])
 
   if (error || !data) notFound()
 
@@ -63,10 +67,26 @@ export default async function DetalleCotizacionBombeoPage({
             <Edit className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Editar</span>
           </Button>
-          <Button variant="secondary" size="sm" disabled>
-            <FileDown className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">PDF</span>
-          </Button>
+          {empresaConfig && (
+            <BotonGenerarPDF
+              tipo="bombeo"
+              empresaId={empresaConfig.id}
+              datos={{
+                cotizacion: {
+                  ...cotizacion,
+                  clientes: cotizacion.clientes ?? null,
+                },
+                empresa: {
+                  id: empresaConfig.id,
+                  nombre_empresa: empresaConfig.nombre_empresa,
+                  logo_url: empresaConfig.logo_url,
+                  email: empresaConfig.email ?? null,
+                  telefono: empresaConfig.telefono ?? null,
+                  tasa_dolar: empresaConfig.tasa_dolar,
+                },
+              }}
+            />
+          )}
         </div>
       </div>
 
