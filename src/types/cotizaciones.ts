@@ -106,6 +106,22 @@ export interface NuevaCotizacionInput {
   notas: string
 }
 
+export interface EditarCotizacionInput {
+  provincia: string
+  tarifa: TipoTarifa
+  tipoSistema: TipoSistema
+  kwhMensual: number
+  panelMarca: string
+  panelModelo: string
+  panelPotenciaW: number
+  inversorMarca: string
+  inversorModelo: string
+  inversorKw: number | null
+  inversorCantidad: number | null
+  ley5707Activa: boolean
+  notas: string
+}
+
 export interface EmpresaConfig {
   precio_wp: number
   tasa_dolar: number

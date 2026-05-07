@@ -1,4 +1,4 @@
-import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import type {
   CotizacionRecienteDashboard,
   DashboardData,
@@ -22,8 +22,11 @@ function inicioDelMesIso() {
   return inicio.toISOString()
 }
 
-async function obtenerMetricasRpc(empresaId: string, inicioMes: string): Promise<MetricasRpcRow | null> {
-  const supabase = createClient()
+async function obtenerMetricasRpc(
+  supabase: ReturnType<typeof createClient>,
+  empresaId: string,
+  inicioMes: string
+): Promise<MetricasRpcRow | null> {
   const { data, error } = await supabase.rpc('metricas_dashboard', {
     p_empresa_id: empresaId,
     p_inicio_mes: inicioMes,
@@ -32,9 +35,10 @@ async function obtenerMetricasRpc(empresaId: string, inicioMes: string): Promise
   return data[0] as MetricasRpcRow
 }
 
-async function obtenerUltimasCotizacionesRpc(empresaId: string) {
-  const supabase = createClient()
-
+async function obtenerUltimasCotizacionesRpc(
+  supabase: ReturnType<typeof createClient>,
+  empresaId: string
+) {
   const { data, error } = await supabase.rpc('ultimas_cotizaciones', {
     p_empresa_id: empresaId,
     p_limit: 5,
@@ -47,9 +51,10 @@ async function obtenerUltimasCotizacionesRpc(empresaId: string) {
   return null
 }
 
-
-async function obtenerStockBajo(empresaId: string) {
-  const supabase = createClient()
+async function obtenerStockBajo(
+  supabase: ReturnType<typeof createClient>,
+  empresaId: string
+) {
   const { count } = await supabase
     .from('inventario_stock_bajo')
     .select('id', { count: 'exact', head: true })
@@ -57,47 +62,69 @@ async function obtenerStockBajo(empresaId: string) {
   return count ?? 0
 }
 
+interface MetricasCobrosRow {
+  por_cobrar_mes: number
+  cobrado_mes: number
+  vencidas_count: number
+  proximas_count: number
+}
 
-export async function obtenerMetricasDashboard(): Promise<DashboardData | null> {
+async function obtenerMetricasCobros(
+  supabase: ReturnType<typeof createClient>,
+  empresaId: string
+): Promise<MetricasCobrosRow> {
+  const fallback = { por_cobrar_mes: 0, cobrado_mes: 0, vencidas_count: 0, proximas_count: 0 }
+  try {
+    const { data, error } = await supabase.rpc('metricas_cobros', { p_empresa_id: empresaId })
+    if (error || !data || !Array.isArray(data) || data.length === 0) return fallback
+    return data[0] as MetricasCobrosRow
+  } catch {
+    return fallback
+  }
+}
+
+export async function obtenerMetricasDashboard(params: {
+  userId: string
+  userEmail?: string | null
+}): Promise<DashboardData | null> {
   const supabase = createClient()
-  const empresaId = await obtenerEmpresaId()
 
-  if (!empresaId) return null
+  const { data: usuario } = await supabase
+    .from('usuarios')
+    .select('id, empresa_id, nombre, email, rol')
+    .eq('id', params.userId)
+    .maybeSingle()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const empresaId = usuario?.empresa_id ?? null
 
-  if (!user) return null
+  if (!empresaId) {
+    return null
+  }
 
   const inicioMes = inicioDelMesIso()
 
   const [
-    { data: usuario },
     { count: clientesNuevos },
     metricasAgregadas,
     stockBajo,
     ultimasCotizaciones,
+    metricasCobros,
   ] = await Promise.all([
-    supabase
-      .from('usuarios')
-      .select('id, nombre, email, rol')
-      .eq('id', user.id)
-      .single(),
     supabase
       .from('clientes')
       .select('id', { count: 'exact', head: true })
       .eq('empresa_id', empresaId)
       .gte('created_at', inicioMes),
-    obtenerMetricasRpc(empresaId, inicioMes),
-    obtenerStockBajo(empresaId),
-    obtenerUltimasCotizacionesRpc(empresaId),
+    obtenerMetricasRpc(supabase, empresaId, inicioMes),
+    obtenerStockBajo(supabase, empresaId),
+    obtenerUltimasCotizacionesRpc(supabase, empresaId),
+    obtenerMetricasCobros(supabase, empresaId),
   ])
 
   const usuarioActual: UsuarioDashboard = {
-    id: usuario?.id ?? user.id,
-    nombre: usuario?.nombre ?? user.email?.split('@')[0] ?? 'Equipo',
-    email: usuario?.email ?? user.email ?? '',
+    id: usuario?.id ?? params.userId,
+    nombre: usuario?.nombre ?? params.userEmail?.split('@')[0] ?? 'Equipo',
+    email: usuario?.email ?? params.userEmail ?? '',
     rol: (usuario?.rol ?? 'vendedor') as RolDashboard,
   }
 
@@ -115,6 +142,9 @@ export async function obtenerMetricasDashboard(): Promise<DashboardData | null> 
     valorCerradoMesUsd: Number(metricasAgregadas?.valor_cerrado_mes ?? 0),
     proyectosEnInstalacion: Number(metricasAgregadas?.en_instalacion ?? 0),
     stockBajo,
+    cobrosPorCobrarMes: Number(metricasCobros.por_cobrar_mes),
+    cobrosCobraadoMes: Number(metricasCobros.cobrado_mes),
+    cobrosVencidas: Number(metricasCobros.vencidas_count),
   }
 
   let recientes = ultimasCotizaciones ?? []

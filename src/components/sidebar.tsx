@@ -13,6 +13,7 @@ import {
   LogOut,
   Zap,
   Shield,
+  CreditCard,
 } from 'lucide-react'
 import { useUsuario } from '@/hooks/useUsuario'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,7 @@ function resolverTituloMovil(pathname: string) {
   if (pathname.startsWith('/bombeo')) return 'Bombeo'
   if (pathname.startsWith('/electrico')) return 'Eléctrico'
   if (pathname.startsWith('/clientes')) return 'Clientes'
+  if (pathname.startsWith('/cobros')) return 'Cobros'
   if (pathname.startsWith('/inventario')) return 'Inventario'
   if (pathname.startsWith('/configuracion')) return 'Configuración'
   if (pathname.startsWith('/admin')) return 'Super admin'
@@ -48,6 +50,7 @@ function resolverNavItems({
     { href: '/bombeo', label: 'Bombeo', mobileLabel: 'Bombeo', icon: Droplets },
     { href: '/electrico', label: 'Eléctrico', mobileLabel: 'Eléctrico', icon: Zap },
     { href: '/clientes', label: 'Clientes', mobileLabel: 'CRM', icon: Users },
+    { href: '/cobros', label: 'Cobros', mobileLabel: 'Cobros', icon: CreditCard },
     ...(tieneInventario
       ? [{ href: '/inventario', label: 'Inventario', mobileLabel: 'Stock', icon: Package }]
       : []),
@@ -58,6 +61,13 @@ function resolverNavItems({
       ? [{ href: '/admin', label: 'Super admin', mobileLabel: 'Admin', icon: Shield }]
       : []),
   ] as const
+}
+
+async function cerrarSesionApp(router: ReturnType<typeof useRouter>) {
+  const supabase = createClient()
+  await supabase.auth.signOut()
+  router.push('/login')
+  router.refresh()
 }
 
 function NavLink({
@@ -98,13 +108,6 @@ export function Sidebar() {
     tieneInventario: Boolean(usuario?.esSuperadmin || empresa?.plan_actual !== 'basico'),
   })
 
-  async function cerrarSesion() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
-
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 w-[220px] h-screen bg-[var(--surface)] border-r border-[var(--border)] z-40">
       <div className="flex items-center gap-2.5 px-4 py-4 border-b border-[var(--border)]">
@@ -130,7 +133,7 @@ export function Sidebar() {
 
       <div className="p-3 border-t border-[var(--border)]">
         <button
-          onClick={cerrarSesion}
+          onClick={() => cerrarSesionApp(router)}
           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-[var(--radius-sm)] text-[13px] font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
@@ -147,13 +150,6 @@ export function MobileHeader() {
   const { usuario } = useUsuario()
   const puedeVerConfiguracion = Boolean(usuario?.esSuperadmin || usuario?.rol === 'admin')
   const titulo = resolverTituloMovil(pathname)
-
-  async function cerrarSesion() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <header className="md:hidden fixed top-0 left-0 right-0 h-[54px] bg-[var(--surface)] border-b border-[var(--border)] z-40">
@@ -180,13 +176,53 @@ export function MobileHeader() {
           ) : null}
           <button
             type="button"
-            onClick={cerrarSesion}
+            onClick={() => cerrarSesionApp(router)}
             className="flex items-center justify-center h-8 w-8 rounded-[var(--radius-sm)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]"
             aria-label="Cerrar sesion"
           >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
+      </div>
+    </header>
+  )
+}
+
+export function DesktopHeader() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const { usuario } = useUsuario()
+  const puedeVerConfiguracion = Boolean(usuario?.esSuperadmin || usuario?.rol === 'admin')
+  const titulo = resolverTituloMovil(pathname)
+
+  return (
+    <header className="hidden md:flex items-center justify-between gap-4 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
+          Espacio de trabajo
+        </p>
+        <p className="text-[18px] font-medium tracking-[-0.02em] text-[var(--text)] truncate">
+          {titulo}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {puedeVerConfiguracion ? (
+          <Link href="/configuracion">
+            <button className="bg-transparent text-[var(--text)] border border-[var(--border-s)] rounded-[var(--radius-sm)] px-4 py-2 text-[13px] font-medium hover:bg-[var(--surface-2)] transition-colors inline-flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Configuracion
+            </button>
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => cerrarSesionApp(router)}
+          className="bg-[var(--text)] text-[var(--bg)] rounded-[var(--radius-sm)] px-4 py-2 text-[13px] font-medium tracking-[-0.01em] hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Cerrar sesion
+        </button>
       </div>
     </header>
   )

@@ -1,6 +1,7 @@
 import { createClient, obtenerConfigEmpresa } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { SeccionCobro } from '@/components/cobros/SeccionCobro'
 import { BadgeEstado } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -19,7 +20,7 @@ export default async function DetalleCotizacionPage({
 }) {
   const supabase = createClient()
 
-  const [{ data: cotizacion, error }, consumoResult, empresaConfig] = await Promise.all([
+  const [{ data: cotizacion, error }, consumoResult, empresaConfig, planCobro] = await Promise.all([
     supabase
       .from('cotizaciones')
       .select('*, clientes(nombre, telefono, email, numero_contrato)')
@@ -31,6 +32,11 @@ export default async function DetalleCotizacionPage({
       .eq('cotizacion_id', params.id)
       .order('mes'),
     obtenerConfigEmpresa(),
+    supabase
+      .from('planes_pago')
+      .select('id, estado, plan_pago_cuotas(porcentaje, estado)')
+      .eq('cotizacion_id', params.id)
+      .maybeSingle(),
   ])
 
   if (error || !cotizacion) notFound()
@@ -301,6 +307,14 @@ export default async function DetalleCotizacionPage({
               <p className="text-[13px] text-[var(--text-2)] leading-relaxed">{cot.notas}</p>
             </div>
           )}
+
+          {/* Plan de cobro */}
+          <SeccionCobro
+            cotizacionId={cot.id}
+            tipo="solar"
+            estadoCotizacion={cot.estado}
+            planExistente={planCobro.data ?? null}
+          />
         </div>
       </div>
     </div>

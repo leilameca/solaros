@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import {
+  capitalizarPlan,
   LIMITE_USUARIOS,
   PLANES_SOLAR_OS,
   sumarMeses,
@@ -485,6 +486,77 @@ export async function invitarUsuarioEmpresa(
         error instanceof Error
           ? normalizarErrorSupabase(error.message)
           : 'No se pudo enviar la invitacion.',
+    }
+  }
+}
+
+export async function cambiarPlanSuscripcionEmpresa(input: {
+  plan_actual: PlanSuscripcionEmpresa
+}): Promise<
+  ResultadoAccionConfiguracion & {
+    plan_actual?: PlanSuscripcionEmpresa
+    suscripcion_monto_usd?: number
+  }
+> {
+  try {
+    const { usuarioActual, error } = await validarAdminConEmpresa()
+
+    if (error || !usuarioActual.empresa_id) {
+      return { error: error ?? 'Empresa no disponible.' }
+    }
+
+    const planObjetivo = input.plan_actual
+    const datosPlan = PLANES_SOLAR_OS[planObjetivo]
+
+    if (!datosPlan) {
+      return { error: 'El plan seleccionado no es valido.' }
+    }
+
+    const admin = createAdminClient()
+    const { data: empresaActual } = await admin
+      .from('empresas')
+      .select('plan_actual, suscripcion_estado')
+      .eq('id', usuarioActual.empresa_id)
+      .maybeSingle()
+
+    if (empresaActual?.plan_actual === planObjetivo) {
+      return {
+        ok: true,
+        message: `Ya estas en el plan ${capitalizarPlan(planObjetivo)}.`,
+        plan_actual: planObjetivo,
+        suscripcion_monto_usd: datosPlan.precioUsd,
+      }
+    }
+
+    const { error: updateError } = await admin
+      .from('empresas')
+      .update({
+        plan_actual: planObjetivo,
+        suscripcion_monto_usd: datosPlan.precioUsd,
+      })
+      .eq('id', usuarioActual.empresa_id)
+
+    if (updateError) {
+      return { error: normalizarErrorSupabase(updateError.message) }
+    }
+
+    revalidarConfiguracion()
+
+    return {
+      ok: true,
+      message:
+        empresaActual?.suscripcion_estado === 'trial'
+          ? `Plan cambiado a ${capitalizarPlan(planObjetivo)}. Tu prueba gratuita sigue activa.`
+          : `Plan actualizado a ${capitalizarPlan(planObjetivo)}.`,
+      plan_actual: planObjetivo,
+      suscripcion_monto_usd: datosPlan.precioUsd,
+    }
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? normalizarErrorSupabase(error.message)
+          : 'No se pudo cambiar el plan de la empresa.',
     }
   }
 }

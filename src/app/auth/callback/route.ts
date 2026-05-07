@@ -1,17 +1,45 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
 import { sincronizarUsuarioDesdeAuth } from '@/lib/supabase/sync-user'
 
-export async function GET(request: Request) {
-  const url = new URL(request.url)
+function normalizarSiguienteRuta(siguienteRuta: string | null) {
+  if (!siguienteRuta || !siguienteRuta.startsWith('/')) {
+    return '/dashboard'
+  }
+
+  return siguienteRuta
+}
+
+function crearClienteCallback(request: NextRequest, response: NextResponse) {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+}
+
+export async function GET(request: NextRequest) {
+  const url = request.nextUrl
   const code = url.searchParams.get('code')
-  const siguienteRuta = url.searchParams.get('next') || '/dashboard'
+  const siguienteRuta = normalizarSiguienteRuta(url.searchParams.get('next'))
 
   if (!code) {
     return NextResponse.redirect(new URL('/login?error=No%20se%20recibio%20el%20codigo%20de%20acceso.', url.origin))
   }
 
-  const supabase = createClient()
+  const response = NextResponse.redirect(new URL(siguienteRuta, url.origin))
+  const supabase = crearClienteCallback(request, response)
   const { error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
@@ -24,15 +52,19 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
-    try {
-      await sincronizarUsuarioDesdeAuth(user)
-    } catch {
-      return NextResponse.redirect(
-        new URL('/login?error=No%20se%20pudo%20sincronizar%20tu%20usuario.', url.origin)
-      )
-    }
+  if (!user) {
+    return NextResponse.redirect(
+      new URL('/login?error=No%20se%20pudo%20confirmar%20la%20sesion%20de%20Google.', url.origin)
+    )
   }
 
-  return NextResponse.redirect(new URL(siguienteRuta, url.origin))
+  try {
+    await sincronizarUsuarioDesdeAuth(user)
+  } catch {
+    return NextResponse.redirect(
+      new URL('/login?error=No%20se%20pudo%20sincronizar%20tu%20usuario.', url.origin)
+    )
+  }
+
+  return response
 }

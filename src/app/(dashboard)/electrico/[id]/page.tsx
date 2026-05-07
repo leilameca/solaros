@@ -1,6 +1,7 @@
 import { createClient, obtenerConfigEmpresa } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { SeccionCobro } from '@/components/cobros/SeccionCobro'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -38,6 +39,7 @@ export default async function DetalleElectricoPage({
     { data: cotizacion, error },
     { data: itemsData },
     empresaConfig,
+    planCobro,
   ] = await Promise.all([
     supabase
       .from('cotizaciones_electricas')
@@ -55,6 +57,11 @@ export default async function DetalleElectricoPage({
       .eq('cotizacion_id', params.id)
       .order('orden'),
     obtenerConfigEmpresa(),
+    supabase
+      .from('planes_pago')
+      .select('id, estado, plan_pago_cuotas(porcentaje, estado)')
+      .eq('cotizacion_id', params.id)
+      .maybeSingle(),
   ])
 
   if (error || !cotizacion) notFound()
@@ -348,6 +355,13 @@ export default async function DetalleElectricoPage({
               </>
             )}
           </div>
+
+          <SeccionCobro
+            cotizacionId={cot.id}
+            tipo="electrico"
+            estadoCotizacion={cot.estado}
+            planExistente={planCobro.data ?? null}
+          />
         </div>
       </div>
     </div>

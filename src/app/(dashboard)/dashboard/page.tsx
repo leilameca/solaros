@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { redirect } from 'next/navigation'
-import { createClient, obtenerEmpresaId } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { formatearUSD } from '@/lib/calculos'
 import { obtenerMetricasDashboard } from '@/lib/dashboard'
 import { AvisoEmpresaNoConfigurada } from '@/components/AvisoEmpresaNoConfigurada'
@@ -37,13 +37,10 @@ async function DashboardContenido() {
     redirect('/login')
   }
 
-  const empresaId = await obtenerEmpresaId()
-
-  if (!empresaId) {
-    return <AvisoEmpresaNoConfigurada titulo="Dashboard no disponible" volverA="/configuracion" />
-  }
-
-  const data = await obtenerMetricasDashboard()
+  const data = await obtenerMetricasDashboard({
+    userId: user.id,
+    userEmail: user.email ?? null,
+  })
 
   if (!data) {
     return <AvisoEmpresaNoConfigurada titulo="Dashboard no disponible" volverA="/configuracion" />
@@ -117,6 +114,52 @@ async function DashboardContenido() {
             />
           </div>
         </>
+      )}
+
+      {!esTecnico && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <MetricaCard
+            label="Por cobrar este mes"
+            valor={formatearUSD(data.metricas.cobrosPorCobrarMes)}
+            descripcion="Cuotas con vencimiento en el mes"
+            acento="amber"
+          />
+          <MetricaCard
+            label="Cobrado este mes"
+            valor={formatearUSD(data.metricas.cobrosCobraadoMes)}
+            descripcion="Pagos registrados en el mes"
+            acento="green"
+          />
+          <MetricaCard
+            label="Cuotas vencidas"
+            valor={String(data.metricas.cobrosVencidas)}
+            descripcion="Requieren atención inmediata"
+            acento={data.metricas.cobrosVencidas > 0 ? 'red' : 'default'}
+          />
+        </div>
+      )}
+
+      {data.metricas.cobrosVencidas > 0 && !esTecnico && (
+        <Link
+          href="/cobros?estado=vencido"
+          className="block bg-[var(--red-bg)] border border-[var(--red)] rounded-[var(--radius)] p-4 hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[13px] font-medium text-[var(--red)]">
+                {data.metricas.cobrosVencidas}{' '}
+                {data.metricas.cobrosVencidas === 1 ? 'cuota vencida' : 'cuotas vencidas'}
+              </p>
+              <p className="text-[12px] text-[var(--red)] mt-1">
+                Registra los pagos o coordina con los clientes para ponerlos al día.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--red)] flex-shrink-0">
+              Ver cobros
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+          </div>
+        </Link>
       )}
 
       {data.metricas.stockBajo > 0 ? (

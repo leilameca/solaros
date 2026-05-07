@@ -229,26 +229,36 @@ export async function obtenerMovimientosInventario(empresaId: string, productoId
 }
 
 export async function obtenerProductosStockBajo(empresaId: string) {
-  const productos = await obtenerProductosInventario({
-    empresaId,
-    soloStockBajo: true,
-    soloActivos: true,
-  })
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('inventario_stock_bajo')
+    .select('id, marca, modelo, categoria, stock_actual, stock_minimo, unidad')
+    .eq('empresa_id', empresaId)
+    .order('updated_at', { ascending: false })
 
-  return productos.map<ProductoStockBajo>((producto) => ({
-    id: producto.id,
-    marca: producto.marca,
-    modelo: producto.modelo,
-    categoria: producto.categoria,
-    stock_actual: producto.stock_actual,
-    stock_minimo: producto.stock_minimo,
-    unidad: producto.unidad,
+  if (error || !data) {
+    return [] as ProductoStockBajo[]
+  }
+
+  return (data as Record<string, unknown>[]).map((producto) => ({
+    id: String(producto.id),
+    marca: String(producto.marca ?? ''),
+    modelo: String(producto.modelo ?? ''),
+    categoria: String(producto.categoria ?? 'otro') as CategoriaProducto,
+    stock_actual: numeroSeguro(producto.stock_actual),
+    stock_minimo: numeroSeguro(producto.stock_minimo),
+    unidad: typeof producto.unidad === 'string' && producto.unidad.trim() ? producto.unidad : 'und',
   }))
 }
 
 export async function contarProductosStockBajo(empresaId: string) {
-  const productos = await obtenerProductosStockBajo(empresaId)
-  return productos.length
+  const supabase = createClient()
+  const { count } = await supabase
+    .from('inventario_stock_bajo')
+    .select('id', { count: 'exact', head: true })
+    .eq('empresa_id', empresaId)
+
+  return count ?? 0
 }
 
 export async function obtenerMetricasInventario(empresaId: string): Promise<MetricasInventario> {

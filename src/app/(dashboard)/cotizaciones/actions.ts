@@ -10,7 +10,7 @@ import {
 import { verificarLimiteCotizacionesMes } from '@/lib/limites-plan'
 import { calcularSistema, calcularLey5707 } from '@/lib/calculos'
 import { PRECIO_WP_DEFAULT, TASA_DOLAR_DEFAULT } from '@/lib/constants'
-import type { EstadoCotizacion, NuevaCotizacionInput } from '@/types/cotizaciones'
+import type { EstadoCotizacion, NuevaCotizacionInput, EditarCotizacionInput } from '@/types/cotizaciones'
 
 export async function crearCotizacion(input: NuevaCotizacionInput) {
   const supabase = createClient()
@@ -136,6 +136,98 @@ export async function crearCotizacion(input: NuevaCotizacionInput) {
     return { error: normalizarErrorSupabase(error?.message) }
   }
 
+  revalidatePath('/cotizaciones')
+  redirect(`/cotizaciones/${cotizacionId}`)
+}
+
+export async function actualizarCotizacion(
+  cotizacionId: string,
+  input: EditarCotizacionInput
+) {
+  const supabase = createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const empresaId = await obtenerEmpresaId()
+  if (!empresaId) return { error: MENSAJE_EMPRESA_NO_CONFIGURADA }
+
+  const { data: empresa } = await supabase
+    .from('empresas')
+    .select('precio_wp, tasa_dolar')
+    .eq('id', empresaId)
+    .single()
+
+  const precioWp = empresa?.precio_wp ?? PRECIO_WP_DEFAULT
+  const tasaDolar = empresa?.tasa_dolar ?? TASA_DOLAR_DEFAULT
+
+  const resultado = calcularSistema({
+    kwhMensual: input.kwhMensual,
+    provincia: input.provincia,
+    tarifa: input.tarifa,
+    panelW: input.panelPotenciaW,
+    precioWp,
+    tasaDolar,
+  })
+
+  const ley5707 = input.ley5707Activa
+    ? calcularLey5707(resultado.totalUsd, resultado.ahorroAnualUsd)
+    : null
+
+  const { error } = await supabase
+    .from('cotizaciones')
+    .update({
+      tipo_sistema:       input.tipoSistema,
+      provincia:          input.provincia,
+      tarifa:             input.tarifa,
+      kwh_mensual:        input.kwhMensual,
+      horas_sol:          resultado.horasSol,
+      kwp_calculado:      resultado.kwpReal,
+      generacion_mensual: resultado.generacionMensual,
+      generacion_anual:   resultado.generacionAnual,
+      panel_marca:        input.panelMarca || null,
+      panel_modelo:       input.panelModelo || null,
+      panel_potencia_w:   input.panelPotenciaW || null,
+      panel_cantidad:     resultado.cantidadPaneles,
+      inversor_marca:     input.inversorMarca || null,
+      inversor_modelo:    input.inversorModelo || null,
+      inversor_kw:        input.inversorKw ?? null,
+      inversor_cantidad:  input.inversorCantidad ?? null,
+      precio_wp:          precioWp,
+      total_usd:          resultado.totalUsd,
+      ley_5707_activa:    input.ley5707Activa,
+      inversion_neta_usd: ley5707?.inversionNetaUsd ?? null,
+      retorno_con_ley:    ley5707?.retornoConLey ?? null,
+      retorno_sin_ley:    resultado.retornoSinLey,
+      ahorro_mensual_rd:  resultado.ahorroMensualRd,
+      ahorro_anual_usd:   resultado.ahorroAnualUsd,
+      tasa_dolar:         tasaDolar,
+      notas:              input.notas || null,
+      updated_at:         new Date().toISOString(),
+    })
+    .eq('id', cotizacionId)
+    .eq('empresa_id', empresaId)
+
+  if (error) return { error: normalizarErrorSupabase(error.message) }
+
+  await supabase
+    .from('cotizacion_consumo_mensual')
+    .delete()
+    .eq('cotizacion_id', cotizacionId)
+
+  const consumoMensual = resultado.meses.map((mes) => ({
+    cotizacion_id: cotizacionId,
+    empresa_id:    empresaId,
+    mes:           mes.mes,
+    consumo_kwh:   mes.consumo,
+    generacion_kwh: mes.generacion,
+  }))
+
+  await supabase.from('cotizacion_consumo_mensual').insert(consumoMensual)
+
+  revalidatePath(`/cotizaciones/${cotizacionId}`)
   revalidatePath('/cotizaciones')
   redirect(`/cotizaciones/${cotizacionId}`)
 }

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChevronLeft, Edit } from 'lucide-react'
 import { createClient, obtenerConfigEmpresa } from '@/lib/supabase/server'
+import { SeccionCobro } from '@/components/cobros/SeccionCobro'
 import { Button } from '@/components/ui/button'
 import { CambiarEstadoBombeo } from '@/components/bombeo/CambiarEstadoBombeo'
 import { DesglosePrecio } from '@/components/bombeo/DesglosePrecio'
@@ -20,13 +21,18 @@ export default async function DetalleCotizacionBombeoPage({
 }) {
   const supabase = createClient()
 
-  const [{ data, error }, empresaConfig] = await Promise.all([
+  const [{ data, error }, empresaConfig, planCobro] = await Promise.all([
     supabase
       .from('cotizaciones_bombeo')
       .select('*, clientes(nombre, telefono, email)')
       .eq('id', params.id)
       .single(),
     obtenerConfigEmpresa(),
+    supabase
+      .from('planes_pago')
+      .select('id, estado, plan_pago_cuotas(porcentaje, estado)')
+      .eq('cotizacion_id', params.id)
+      .maybeSingle(),
   ])
 
   if (error || !data) notFound()
@@ -134,6 +140,13 @@ export default async function DetalleCotizacionBombeoPage({
               </div>
             )}
           </div>
+
+          <SeccionCobro
+            cotizacionId={cotizacion.id}
+            tipo="bombeo"
+            estadoCotizacion={cotizacion.estado}
+            planExistente={planCobro.data ?? null}
+          />
         </div>
       </div>
     </div>

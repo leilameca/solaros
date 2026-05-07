@@ -29,6 +29,9 @@ export interface MetricasDashboard {
   valorCerradoMesUsd: number
   proyectosEnInstalacion: number
   stockBajo: number
+  cobrosPorCobrarMes: number
+  cobrosCobraadoMes: number
+  cobrosVencidas: number
 }
 
 export interface DashboardData {

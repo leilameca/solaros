@@ -117,7 +117,7 @@ export function ConfiguracionEmpresaClient({
       </div>
 
       <div className={tabActivo === 'suscripcion' ? 'block' : 'hidden'}>
-        <TabSuscripcion empresa={initialData.empresa} />
+        <TabSuscripcion empresa={initialData.empresa} onFeedback={setFeedback} />
       </div>
 
       <div className={tabActivo === 'tutorial' ? 'block' : 'hidden'}>

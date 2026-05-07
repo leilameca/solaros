@@ -4,12 +4,10 @@ import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowRight,
-  BadgeCheck,
   Globe,
   KeyRound,
   Mail,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react'
 import { sincronizarUsuarioAutenticado } from '@/app/(auth)/login/actions'
 import { Button } from '@/components/ui/button'
@@ -22,40 +20,23 @@ type PasoAcceso = 'formulario' | 'codigo'
 
 const OTP_COOLDOWN_SEGUNDOS = 60
 
-const BENEFICIOS = [
-  '3 meses de prueba gratuita desde el alta',
-  'Acceso desde celular para ventas en campo',
-  'CRM, cotizaciones, bombeo, electrico y dashboard en un solo lugar',
-]
-
 function normalizarErrorAuth(mensaje: string) {
   const texto = mensaje.toLowerCase()
-
-  if (texto.includes('invalid login credentials')) {
+  if (texto.includes('invalid login credentials'))
     return 'No encontramos una cuenta activa con ese correo.'
-  }
-
-  if (texto.includes('email not confirmed')) {
-    return 'Confirma el codigo del correo para terminar de entrar.'
-  }
-
-  if (texto.includes('provider is not enabled')) {
-    return 'Google Auth no esta habilitado aun en Supabase.'
-  }
-
+  if (texto.includes('email not confirmed'))
+    return 'Confirma el código del correo para terminar de entrar.'
+  if (texto.includes('provider is not enabled'))
+    return 'Google Auth no está habilitado aún en Supabase.'
   if (
     texto.includes('security purposes') ||
     texto.includes('too many requests') ||
     texto.includes('rate limit') ||
     texto.includes('429')
-  ) {
-    return 'Ya enviamos un codigo hace poco. Espera un momento y vuelve a intentarlo.'
-  }
-
-  if (texto.includes('otp')) {
-    return 'El codigo no es valido o ya vencio. Solicita uno nuevo.'
-  }
-
+  )
+    return 'Ya enviamos un código hace poco. Espera un momento y vuelve a intentarlo.'
+  if (texto.includes('otp'))
+    return 'El código no es válido o ya venció. Solicita uno nuevo.'
   return mensaje
 }
 
@@ -83,40 +64,30 @@ function LoginContenido() {
   const titulo = modo === 'login' ? 'Entrar a SolarOS' : 'Crear cuenta'
   const subtitulo =
     modo === 'login'
-      ? 'Accede con un codigo enviado a tu correo o continua con Google.'
-      : 'Crea tu cuenta sin contrasena y empieza tu prueba gratuita.'
+      ? 'Accede con un código enviado a tu correo o continúa con Google.'
+      : 'Crea tu cuenta sin contraseña y empieza tu prueba gratuita.'
 
   const siguienteRuta = modo === 'signup' ? '/configuracion' : '/dashboard'
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    if (segundosReenvio <= 0) {
-      return
-    }
-
+    if (segundosReenvio <= 0) return
     const intervalo = window.setInterval(() => {
       setSegundosReenvio((actual) => (actual <= 1 ? 0 : actual - 1))
     }, 1000)
-
     return () => window.clearInterval(intervalo)
   }, [segundosReenvio])
 
   async function solicitarCodigoAcceso() {
     const correo = email.trim().toLowerCase()
-
     return supabase.auth.signInWithOtp({
       email: correo,
       options: {
         shouldCreateUser: modo === 'signup',
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-          siguienteRuta
-        )}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(siguienteRuta)}`,
         data:
           modo === 'signup'
-            ? {
-                nombre: nombre.trim(),
-                rol: 'admin',
-              }
+            ? { nombre: nombre.trim(), rol: 'admin' }
             : undefined,
       },
     })
@@ -126,112 +97,66 @@ function LoginContenido() {
     event.preventDefault()
     setError('')
     setMensaje('')
-
-    if (!email.trim()) {
-      setError('Escribe tu correo para continuar.')
-      return
-    }
-
+    if (!email.trim()) { setError('Escribe tu correo para continuar.'); return }
     if (modo === 'signup' && !nombre.trim()) {
       setError('Tu nombre es necesario para crear la cuenta.')
       return
     }
-
     setCargando(true)
-
     const { error: otpError } = await solicitarCodigoAcceso()
-
     setCargando(false)
-
-    if (otpError) {
-      setError(normalizarErrorAuth(otpError.message))
-      return
-    }
-
+    if (otpError) { setError(normalizarErrorAuth(otpError.message)); return }
     setSegundosReenvio(OTP_COOLDOWN_SEGUNDOS)
     setPaso('codigo')
-    setMensaje(
-      `Te enviamos un codigo a ${email.trim().toLowerCase()}. Escribelo aqui para continuar.`
-    )
+    setMensaje(`Te enviamos un código a ${email.trim().toLowerCase()}. Escríbelo aquí para continuar.`)
   }
 
   async function confirmarCodigo(event: FormEvent) {
     event.preventDefault()
     setError('')
     setMensaje('')
-
-    if (!codigo.trim()) {
-      setError('Escribe el codigo recibido por correo.')
-      return
-    }
-
+    if (!codigo.trim()) { setError('Escribe el código recibido por correo.'); return }
     setCargando(true)
-
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email: email.trim().toLowerCase(),
       token: codigo.trim(),
       type: 'email',
     })
-
     if (verifyError) {
       setCargando(false)
       setError(normalizarErrorAuth(verifyError.message))
       return
     }
-
     const resultado = await sincronizarUsuarioAutenticado(nombre.trim())
-
     setCargando(false)
-
-    if (resultado.error) {
-      setError(resultado.error)
-      return
-    }
-
+    if (resultado.error) { setError(resultado.error); return }
     router.push(siguienteRuta)
     router.refresh()
   }
 
   async function reenviarCodigo() {
-    if (segundosReenvio > 0) {
-      return
-    }
-
+    if (segundosReenvio > 0) return
     setError('')
     setMensaje('')
     setCargando(true)
-
     const { error: otpError } = await solicitarCodigoAcceso()
-
     setCargando(false)
-
-    if (otpError) {
-      setError(normalizarErrorAuth(otpError.message))
-      return
-    }
-
+    if (otpError) { setError(normalizarErrorAuth(otpError.message)); return }
     setSegundosReenvio(OTP_COOLDOWN_SEGUNDOS)
-    setMensaje(`Enviamos un nuevo codigo a ${email.trim().toLowerCase()}.`)
+    setMensaje(`Enviamos un nuevo código a ${email.trim().toLowerCase()}.`)
   }
 
   async function continuarConGoogle() {
     setError('')
     setMensaje('')
     setCargando(true)
-
     const { error: googleError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-          siguienteRuta
-        )}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(siguienteRuta)}`,
       },
     })
-
-    if (googleError) {
-      setCargando(false)
-      setError(normalizarErrorAuth(googleError.message))
-    }
+    if (googleError) { setCargando(false); setError(normalizarErrorAuth(googleError.message)) }
   }
 
   function cambiarModo(nuevoModo: ModoAcceso) {
@@ -244,76 +169,52 @@ function LoginContenido() {
   }
 
   return (
-    <div className="w-full max-w-[1120px] grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-6 items-stretch">
-      <section className="relative overflow-hidden rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,#F8F1DF_0%,#FAFAF8_100%)] p-6 sm:p-8 lg:p-10 min-h-[320px]">
-        <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-[var(--accent)]/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[var(--green)]/10 blur-3xl" />
+    <div className="w-full max-w-[1060px] grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-0 rounded-[20px] overflow-hidden border border-[rgba(255,255,255,0.06)] shadow-[0_32px_80px_rgba(0,0,0,0.28)]">
 
-        <div className="relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-bd)] bg-white/70 px-3 py-1.5 text-[12px] font-medium text-[var(--accent)]">
-            <Sparkles className="h-3.5 w-3.5" />
-            SaaS para instaladores solares en Republica Dominicana
-          </div>
+      {/* ── Panel izquierdo ── */}
+      <section className="flex flex-col justify-between bg-[#0D0D0D] px-8 py-9 sm:px-10 sm:py-10 lg:px-12 lg:py-12 min-h-[360px]">
+        {/* Marca */}
+        <p className="text-[13px] font-medium tracking-[0.04em] text-[#F59E0B]">
+          SolarOS
+        </p>
 
-          <div className="space-y-3">
-            <h1 className="max-w-[560px] text-[32px] sm:text-[40px] leading-[1.02] font-[300] tracking-[-0.05em] text-[var(--text)]">
-              Vende, cotiza y da seguimiento sin perder el ritmo del equipo.
-            </h1>
-            <p className="max-w-[560px] text-[14px] sm:text-[15px] leading-relaxed text-[var(--text-2)]">
-              SolarOS unifica clientes, propuestas, bombeo, electrico, inventario y metricas para que tu operacion comercial funcione bien tanto en oficina como en campo.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-[18px] border border-[var(--border)] bg-white/80 p-4">
-              <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
-                Prueba
-              </p>
-              <p className="mt-2 text-[24px] font-[300] tracking-[-0.04em] text-[var(--text)]">
-                3 meses
-              </p>
-              <p className="mt-1 text-[12px] text-[var(--text-3)]">Sin costo inicial</p>
-            </div>
-            <div className="rounded-[18px] border border-[var(--border)] bg-white/80 p-4">
-              <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
-                Basico
-              </p>
-              <p className="mt-2 text-[24px] font-[300] tracking-[-0.04em] text-[var(--text)]">
-                $10
-              </p>
-              <p className="mt-1 text-[12px] text-[var(--text-3)]">Incluye bombeo</p>
-            </div>
-            <div className="rounded-[18px] border border-[var(--border)] bg-white/80 p-4">
-              <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
-                Movil
-              </p>
-              <p className="mt-2 text-[24px] font-[300] tracking-[-0.04em] text-[var(--text)]">
-                100%
-              </p>
-              <p className="mt-1 text-[12px] text-[var(--text-3)]">Listo para campo</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {BENEFICIOS.map((beneficio) => (
-              <div key={beneficio} className="flex items-center gap-2 text-[13px] text-[var(--text-2)]">
-                <BadgeCheck className="h-4 w-4 text-[var(--green)]" />
-                <span>{beneficio}</span>
+        {/* Contenido central */}
+        <div className="py-8 space-y-5">
+          <h1 className="max-w-[480px] text-[34px] sm:text-[44px] leading-[1.05] font-[350] tracking-[-0.04em] text-white">
+            Cotizaciones, clientes y cobros. Todo el negocio solar.
+          </h1>
+          <div className="space-y-2 pt-1">
+            {[
+              'Cotizaciones solares, bombeo y eléctricas',
+              'Seguimiento de proyectos con estado y alertas',
+              'Planes de cobro y registro de pagos',
+              'Inventario y métricas en tiempo real',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <span className="h-px w-3 bg-[#444] flex-shrink-0" />
+                <p className="text-[13px] leading-snug text-[#888]">{item}</p>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Footer */}
+        <p className="text-[11px] tracking-[0.03em] text-[#333]">
+          República Dominicana · 3 meses de prueba gratuita
+        </p>
       </section>
 
-      <section className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] shadow-[0_14px_40px_rgba(0,0,0,0.06)] p-6 sm:p-8">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <div className="inline-flex rounded-full bg-[var(--surface-2)] p-1">
+      {/* ── Panel derecho — formulario ── */}
+      <section className="bg-[var(--surface)] border-l border-[var(--border)] px-6 py-8 sm:px-8 flex flex-col">
+        <div className="flex flex-col gap-5 flex-1">
+          {/* Toggle modo */}
+          <div className="space-y-3">
+            <div className="inline-flex rounded-full bg-[var(--surface-2)] p-1 border border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => cambiarModo('login')}
                 className={cn(
-                  'h-9 px-4 rounded-full text-[13px] font-medium transition-colors',
+                  'h-8 px-4 rounded-full text-[13px] font-medium transition-all',
                   modo === 'login'
                     ? 'bg-[var(--text)] text-[var(--bg)]'
                     : 'text-[var(--text-2)] hover:text-[var(--text)]'
@@ -325,7 +226,7 @@ function LoginContenido() {
                 type="button"
                 onClick={() => cambiarModo('signup')}
                 className={cn(
-                  'h-9 px-4 rounded-full text-[13px] font-medium transition-colors',
+                  'h-8 px-4 rounded-full text-[13px] font-medium transition-all',
                   modo === 'signup'
                     ? 'bg-[var(--text)] text-[var(--bg)]'
                     : 'text-[var(--text-2)] hover:text-[var(--text)]'
@@ -336,124 +237,105 @@ function LoginContenido() {
             </div>
 
             <div>
-              <h2 className="text-[24px] font-medium tracking-[-0.03em] text-[var(--text)]">
+              <h2 className="text-[20px] font-medium tracking-[-0.02em] text-[var(--text)]">
                 {titulo}
               </h2>
-              <p className="text-[13px] text-[var(--text-3)] mt-1">{subtitulo}</p>
+              <p className="text-[13px] text-[var(--text-3)] mt-0.5 leading-snug">{subtitulo}</p>
             </div>
           </div>
 
+          {/* Formulario */}
           {paso === 'formulario' ? (
             <form onSubmit={enviarCodigo} className="space-y-4">
               {modo === 'signup' ? (
                 <Input
                   label="Nombre completo"
-                  placeholder="Leilany Meca"
+                  placeholder="Tu nombre"
                   value={nombre}
-                  onChange={(event) => setNombre(event.target.value)}
+                  onChange={(e) => setNombre(e.target.value)}
                   autoComplete="name"
                   required
                 />
               ) : null}
 
               <Input
-                label="Correo electronico"
+                label="Correo electrónico"
                 type="email"
                 placeholder="tu@empresa.com"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
               />
 
-              {mensaje ? (
+              {mensaje && (
                 <p className="text-[12px] text-[var(--blue)] bg-[var(--blue-bg)] px-3 py-2 rounded-[var(--radius-sm)]">
                   {mensaje}
                 </p>
-              ) : null}
-
-              {error ? (
+              )}
+              {error && (
                 <p className="text-[12px] text-[var(--red)] bg-[var(--red-bg)] px-3 py-2 rounded-[var(--radius-sm)]">
                   {error}
                 </p>
-              ) : null}
+              )}
 
-              <Button
-                type="submit"
-                variant="accent"
-                size="lg"
-                loading={cargando}
-                className="w-full"
-              >
+              <Button type="submit" variant="accent" size="lg" loading={cargando} className="w-full">
                 <Mail className="h-4 w-4" />
-                Enviar codigo por correo
+                Enviar código por correo
               </Button>
             </form>
           ) : (
             <form onSubmit={confirmarCodigo} className="space-y-4">
               <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <p className="text-[12px] font-medium text-[var(--text)]">
-                  Revisa tu correo
-                </p>
+                <p className="text-[12px] font-medium text-[var(--text)]">Revisa tu correo</p>
                 <p className="text-[12px] text-[var(--text-3)] mt-1">
-                  Enviamos un codigo de acceso a <span className="font-medium text-[var(--text)]">{email}</span>.
+                  Enviamos un código a{' '}
+                  <span className="font-medium text-[var(--text)]">{email}</span>.
                 </p>
               </div>
 
               <Input
-                label="Codigo de verificacion"
+                label="Código de verificación"
                 placeholder="123456"
                 value={codigo}
-                onChange={(event) => setCodigo(event.target.value.replace(/\s/g, '').slice(0, 6))}
+                onChange={(e) => setCodigo(e.target.value.replace(/\s/g, '').slice(0, 6))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 className="text-center font-[family-name:var(--font-mono)] tracking-[0.3em] text-[18px]"
                 required
               />
 
-              {error ? (
+              {error && (
                 <p className="text-[12px] text-[var(--red)] bg-[var(--red-bg)] px-3 py-2 rounded-[var(--radius-sm)]">
                   {error}
                 </p>
-              ) : null}
-
-              {mensaje ? (
+              )}
+              {mensaje && (
                 <p className="text-[12px] text-[var(--blue)] bg-[var(--blue-bg)] px-3 py-2 rounded-[var(--radius-sm)]">
                   {mensaje}
                 </p>
-              ) : null}
+              )}
 
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => {
-                    setPaso('formulario')
-                    setCodigo('')
-                    setError('')
-                    setMensaje('')
-                    setSegundosReenvio(0)
-                  }}
+                  onClick={() => { setPaso('formulario'); setCodigo(''); setError(''); setMensaje(''); setSegundosReenvio(0) }}
                 >
                   <KeyRound className="h-4 w-4" />
                   Cambiar correo
                 </Button>
-                <Button
-                  type="submit"
-                  variant="accent"
-                  loading={cargando}
-                  className="flex-1"
-                >
+                <Button type="submit" variant="accent" loading={cargando} className="flex-1">
                   <ShieldCheck className="h-4 w-4" />
-                  Confirmar codigo
+                  Confirmar código
                 </Button>
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-[12px] text-[var(--text-3)]">
                   {segundosReenvio > 0
-                    ? `Puedes solicitar otro codigo en ${segundosReenvio}s.`
-                    : 'Si no llego el correo, puedes reenviar otro codigo ahora.'}
+                    ? `Puedes solicitar otro código en ${segundosReenvio}s.`
+                    : 'Si no llegó el correo, puedes reenviar uno ahora.'}
                 </p>
                 <Button
                   type="button"
@@ -462,18 +344,19 @@ function LoginContenido() {
                   onClick={reenviarCodigo}
                   disabled={cargando || segundosReenvio > 0}
                 >
-                  Reenviar codigo
+                  Reenviar código
                 </Button>
               </div>
             </form>
           )}
 
+          {/* Divisor */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-[var(--border)]" />
             </div>
             <div className="relative flex justify-center text-[11px] uppercase tracking-[0.08em] font-[family-name:var(--font-mono)] text-[var(--text-3)]">
-              <span className="bg-[var(--surface)] px-3">o continua con</span>
+              <span className="bg-[var(--surface)] px-3">o continúa con</span>
             </div>
           </div>
 
@@ -489,17 +372,16 @@ function LoginContenido() {
             Google
           </Button>
 
+          {/* Info */}
           <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <p className="text-[12px] font-medium text-[var(--text)]">
-              ¿Que pasa despues?
-            </p>
-            <p className="text-[12px] text-[var(--text-3)] mt-1">
+            <p className="text-[12px] font-medium text-[var(--text)]">¿Qué pasa después?</p>
+            <p className="text-[12px] text-[var(--text-3)] mt-1 leading-relaxed">
               {modo === 'signup'
-                ? 'Al confirmar el codigo entraras directo a Configuracion para crear tu empresa y empezar la prueba gratuita.'
-                : 'Si ya tienes empresa, entraras al dashboard. Si es tu primer acceso, te llevaremos a Configuracion.'}
+                ? 'Al confirmar el código entrarás directo a Configuración para crear tu empresa y empezar la prueba gratuita.'
+                : 'Si ya tienes empresa, entrarás al dashboard. Si es tu primer acceso, te llevaremos a Configuración.'}
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--accent)]">
-              Flujo sin contrasena
+              Flujo sin contraseña
               <ArrowRight className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -511,9 +393,9 @@ function LoginContenido() {
 
 function LoginFallback() {
   return (
-    <div className="w-full max-w-[1120px] grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-6 items-stretch">
-      <div className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,#F8F1DF_0%,#FAFAF8_100%)] min-h-[320px]" />
-      <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] min-h-[520px]" />
+    <div className="w-full max-w-[1060px] grid grid-cols-1 lg:grid-cols-[1fr_400px] rounded-[20px] overflow-hidden border border-[rgba(255,255,255,0.06)]">
+      <div className="bg-[#0D0D0D] min-h-[360px]" />
+      <div className="bg-[var(--surface)] min-h-[520px]" />
     </div>
   )
 }
