@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useState, useTransition } from 'react'
+import { type ReactNode, useEffect, useState, useTransition } from 'react'
 import { ChevronLeft, ChevronRight, Check, Sun, TrendingUp, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCalculo } from '@/hooks/useCalculo'
@@ -103,6 +103,14 @@ export function WizardNuevaCotizacion({
   const [errores, setErrores] = useState<Partial<Record<keyof FormData, string>>>({})
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const clientePrefillKey = clienteInicial?.id ?? 'nuevo'
+
+  useEffect(() => {
+    setPaso(0)
+    setForm(crearFormularioInicial(clienteInicial))
+    setErrores({})
+    setErrorSubmit(null)
+  }, [clientePrefillKey, clienteInicial])
 
   const { resultado, ley5707, esValido } = useCalculo({
     kwhMensual: typeof form.kwhMensual === 'number' ? form.kwhMensual : undefined,

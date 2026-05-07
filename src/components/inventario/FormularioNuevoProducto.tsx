@@ -78,7 +78,7 @@ export function FormularioNuevoProducto() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6 pb-28 md:pb-0">
       <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius)] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
         <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)] mb-2">
           Producto
@@ -241,11 +241,20 @@ export function FormularioNuevoProducto() {
         </div>
       ) : null}
 
-      <div className="flex justify-end">
+      <div className="hidden md:flex justify-end">
         <Button type="submit" variant="accent" loading={isPending}>
           <Save className="h-3.5 w-3.5" />
           Guardar producto
         </Button>
+      </div>
+
+      <div className="md:hidden fixed bottom-[4.75rem] left-0 right-0 z-30 px-4">
+        <div className="mx-auto max-w-content rounded-[var(--radius)] border border-[var(--border)] bg-[color:var(--surface)]/95 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
+          <Button type="submit" variant="accent" loading={isPending} className="w-full">
+            <Save className="h-3.5 w-3.5" />
+            Guardar producto
+          </Button>
+        </div>
       </div>
     </form>
   )

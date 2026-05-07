@@ -5,7 +5,13 @@ import { ChevronLeft } from 'lucide-react'
 import { WizardNuevoElectrico } from '@/components/electrico/WizardNuevoElectrico'
 import { TASA_DOLAR_DEFAULT } from '@/lib/constants'
 
-export default async function NuevaCotizacionElectricaPage() {
+export default async function NuevaCotizacionElectricaPage({
+  searchParams,
+}: {
+  searchParams?: {
+    cliente_id?: string
+  }
+}) {
   const supabase = createClient()
   const {
     data: { user },
@@ -16,12 +22,22 @@ export default async function NuevaCotizacionElectricaPage() {
   if (!config) redirect('/login')
 
   const tasaDolar = config.tasa_dolar ?? TASA_DOLAR_DEFAULT
+  const clienteId = typeof searchParams?.cliente_id === 'string' ? searchParams.cliente_id : null
 
   // Clientes de la empresa
-  const { data: clientes } = await supabase
-    .from('clientes')
-    .select('id, nombre')
-    .order('nombre')
+  const [{ data: clientes }, { data: clienteInicial }] = await Promise.all([
+    supabase
+      .from('clientes')
+      .select('id, nombre')
+      .order('nombre'),
+    clienteId
+      ? supabase
+          .from('clientes')
+          .select('id, nombre')
+          .eq('id', clienteId)
+          .single()
+      : Promise.resolve({ data: null }),
+  ])
 
   // Catálogo de materiales activos
   const { data: catalogo } = await supabase
@@ -74,6 +90,7 @@ export default async function NuevaCotizacionElectricaPage() {
           (cotizacionesBombeo ?? []) as { id: string; numero_cotizacion: string }[]
         }
         tasaDolar={tasaDolar}
+        clienteInicial={clienteInicial ?? null}
       />
     </div>
   )

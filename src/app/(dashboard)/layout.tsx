@@ -1,5 +1,6 @@
 import { Sidebar, BottomNav, DesktopHeader, MobileHeader } from '@/components/sidebar'
 import { UsuarioProvider } from '@/components/usuario/UsuarioProvider'
+import { BurbujaAsistente } from '@/components/asistente/BurbujaAsistente'
 import { obtenerContextoUsuarioApp } from '@/lib/supabase/server'
 
 export default async function DashboardLayout({
@@ -21,6 +22,7 @@ export default async function DashboardLayout({
             {children}
           </div>
         </main>
+        <BurbujaAsistente />
       </div>
     </UsuarioProvider>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useId, useMemo, useTransition } from 'react'
+import { useEffect, useId, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, BookOpen, Check, Zap } from 'lucide-react'
 import { toast } from 'sonner'
@@ -31,6 +31,7 @@ interface Props {
   cotizacionesSolares: CotizacionOpcion[]
   cotizacionesBombeo: CotizacionOpcion[]
   tasaDolar: number
+  clienteInicial?: ClienteOpcion | null
 }
 
 const PASOS = ['Información', 'Materiales', 'Resumen']
@@ -41,6 +42,7 @@ export function WizardNuevoElectrico({
   cotizacionesSolares,
   cotizacionesBombeo,
   tasaDolar,
+  clienteInicial,
 }: Props) {
   const uid = useId()
   const router = useRouter()
@@ -48,8 +50,8 @@ export function WizardNuevoElectrico({
 
   // ── Estado del wizard ──
   const [paso, setPaso] = useState<1 | 2 | 3>(1)
-  const [clienteId, setClienteId] = useState<string | null>(null)
-  const [clienteNombre, setClienteNombre] = useState('')
+  const [clienteId, setClienteId] = useState<string | null>(clienteInicial?.id ?? null)
+  const [clienteNombre, setClienteNombre] = useState(clienteInicial?.nombre ?? '')
   const [modoNuevoCliente, setModoNuevoCliente] = useState(false)
   const [tipoTrabajo, setTipoTrabajo] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -62,6 +64,15 @@ export function WizardNuevoElectrico({
   const [notas, setNotas] = useState('')
   const [estado, setEstado] = useState<EstadoCotizacionElectrica>('borrador')
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null)
+  const clientePrefillKey = clienteInicial?.id ?? 'nuevo'
+
+  useEffect(() => {
+    setPaso(1)
+    setClienteId(clienteInicial?.id ?? null)
+    setClienteNombre(clienteInicial?.nombre ?? '')
+    setModoNuevoCliente(false)
+    setErrorGuardar(null)
+  }, [clientePrefillKey, clienteInicial])
 
   const totales = useMemo(
     () =>

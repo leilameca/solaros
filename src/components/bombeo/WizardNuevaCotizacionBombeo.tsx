@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -118,6 +118,20 @@ export function WizardNuevaCotizacionBombeo({
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
   const [estadoEnvio, setEstadoEnvio] = useState<'borrador' | 'enviada'>('borrador')
   const [isPending, startTransition] = useTransition()
+  const clientePrefillKey = clienteInicial?.id ?? 'nuevo'
+
+  useEffect(() => {
+    setPaso(0)
+    setForm({
+      ...FORM_INICIAL,
+      clienteNombre: clienteInicial?.nombre ?? '',
+      clienteId: clienteInicial?.id ?? null,
+      provincia: clienteInicial?.provincia ?? '',
+    })
+    setErrores({})
+    setErrorSubmit(null)
+    setEstadoEnvio('borrador')
+  }, [clientePrefillKey, clienteInicial])
 
   const calculoInput = useMemo(() => ({
     tipo_sistema: form.tipoSistema,
