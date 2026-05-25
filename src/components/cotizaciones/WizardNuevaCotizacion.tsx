@@ -158,10 +158,12 @@ export function WizardNuevaCotizacion({
     if (paso === 0 && !validarPaso0()) return
     if (paso === 1 && !validarPaso1()) return
     setPaso((prev) => prev + 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function retroceder() {
     setPaso((prev) => prev - 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function seleccionarPanel(panel: ItemInventario) {
@@ -274,41 +276,41 @@ export function WizardNuevaCotizacion({
             precioWp={empresaConfig.precio_wp}
           />
         ) : null}
+      </div>
 
-        <div className="px-6 py-4 border-t border-[var(--border)] space-y-4">
-          {errorSubmit ? (
-            <div className="bg-[var(--red-bg)] border border-[var(--red)] rounded-[var(--radius-sm)] p-3">
-              <p className="text-[12px] text-[var(--red)]">{errorSubmit}</p>
-            </div>
-          ) : null}
-
-          <div className="flex items-center justify-between">
-            <Button
-              variant="secondary"
-              onClick={retroceder}
-              disabled={paso === 0 || isPending}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Atras
-            </Button>
-
-            {paso < PASOS.length - 1 ? (
-              <Button variant="accent" onClick={avanzar} disabled={isPending}>
-                Continuar
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            ) : (
-              <Button
-                variant="accent"
-                onClick={enviar}
-                loading={isPending}
-                disabled={!esValido || isPending}
-              >
-                <Check className="h-3.5 w-3.5" />
-                Guardar cotizacion
-              </Button>
-            )}
+      <div className="sticky bottom-14 md:static z-10 bg-[var(--bg)] md:bg-transparent border-t border-[var(--border)] md:border-t-0 -mx-5 md:mx-0 px-5 md:px-0 py-3 md:py-0 md:mt-4 space-y-3">
+        {errorSubmit ? (
+          <div className="bg-[var(--red-bg)] border border-[var(--red)] rounded-[var(--radius-sm)] p-3">
+            <p className="text-[12px] text-[var(--red)]">{errorSubmit}</p>
           </div>
+        ) : null}
+
+        <div className="flex items-center justify-between">
+          <Button
+            variant="secondary"
+            onClick={retroceder}
+            disabled={paso === 0 || isPending}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Atras
+          </Button>
+
+          {paso < PASOS.length - 1 ? (
+            <Button variant="accent" onClick={avanzar} disabled={isPending}>
+              Continuar
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <Button
+              variant="accent"
+              onClick={enviar}
+              loading={isPending}
+              disabled={!esValido || isPending}
+            >
+              <Check className="h-3.5 w-3.5" />
+              Guardar cotizacion
+            </Button>
+          )}
         </div>
       </div>
     </div>

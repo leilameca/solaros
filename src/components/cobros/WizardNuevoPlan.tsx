@@ -101,6 +101,7 @@ export function WizardNuevoPlan({ cotizacion, tasaDolar }: Props) {
   function avanzarPaso2() {
     if (!planSeleccionado) return
     setPaso(2)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function avanzarPaso3() {
@@ -118,6 +119,7 @@ export function WizardNuevoPlan({ cotizacion, tasaDolar }: Props) {
       }
     }
     setPaso(3)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function confirmarCreacion() {
@@ -217,7 +219,7 @@ export function WizardNuevoPlan({ cotizacion, tasaDolar }: Props) {
             ))}
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="sticky bottom-14 md:static z-10 bg-[var(--bg)] md:bg-transparent border-t border-[var(--border)] md:border-t-0 -mx-5 md:mx-0 px-5 md:px-0 py-3 md:py-0 md:pt-2 flex justify-end">
             <Button
               variant="accent"
               size="md"
@@ -364,8 +366,8 @@ export function WizardNuevoPlan({ cotizacion, tasaDolar }: Props) {
             </p>
           )}
 
-          <div className="flex items-center justify-between gap-3">
-            <Button variant="secondary" onClick={() => setPaso(1)}>
+          <div className="sticky bottom-14 md:static z-10 bg-[var(--bg)] md:bg-transparent border-t border-[var(--border)] md:border-t-0 -mx-5 md:mx-0 px-5 md:px-0 py-3 md:py-0 flex items-center justify-between gap-3">
+            <Button variant="secondary" onClick={() => { setPaso(1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
               Atrás
             </Button>
             <Button variant="accent" onClick={avanzarPaso3} disabled={!porcentajeValido}>
@@ -458,8 +460,8 @@ export function WizardNuevoPlan({ cotizacion, tasaDolar }: Props) {
             </p>
           )}
 
-          <div className="flex items-center justify-between gap-3">
-            <Button variant="secondary" onClick={() => setPaso(2)}>
+          <div className="sticky bottom-14 md:static z-10 bg-[var(--bg)] md:bg-transparent border-t border-[var(--border)] md:border-t-0 -mx-5 md:mx-0 px-5 md:px-0 py-3 md:py-0 flex items-center justify-between gap-3">
+            <Button variant="secondary" onClick={() => { setPaso(2); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
               Atrás
             </Button>
             <Button

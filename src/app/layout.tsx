@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import { DM_Sans, DM_Mono } from 'next/font/google'
+import { Space_Grotesk, DM_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
 
-const dmSans = DM_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['300', '400', '500'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
   display: 'swap',
 })
@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${dmMono.variable} font-[family-name:var(--font-sans)] antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${dmMono.variable} font-[family-name:var(--font-sans)] antialiased`}>
         {children}
         <Toaster
           position="bottom-right"

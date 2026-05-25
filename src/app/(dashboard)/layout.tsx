@@ -16,8 +16,8 @@ export default async function DashboardLayout({
         <Sidebar />
         <MobileHeader />
         <BottomNav />
-        <main className="pt-[54px] md:pt-0 md:pl-[220px] min-h-screen">
-          <div className="mx-auto max-w-content px-5 md:px-8 py-6 pb-20 md:pb-8 space-y-6">
+        <main className="pt-[52px] md:pt-0 md:pl-[210px] min-h-screen">
+          <div className="mx-auto max-w-content px-5 md:px-8 py-6 pb-28 md:pb-8 space-y-6">
             <DesktopHeader />
             {children}
           </div>

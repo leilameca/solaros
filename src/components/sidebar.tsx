@@ -9,7 +9,6 @@ import {
   Users,
   Package,
   Settings,
-  Sun,
   LogOut,
   Zap,
   Shield,
@@ -85,13 +84,13 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-2.5 px-3 py-2 rounded-[var(--radius-sm)] text-[13px] font-medium transition-colors',
+        'flex items-center gap-2.5 px-4 py-[7px] text-[13px] font-medium transition-colors border-l-[2px]',
         activo
-          ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
-          : 'text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'
+          ? 'border-[var(--accent)] text-[var(--text)]'
+          : 'border-transparent text-[var(--text-3)] hover:text-[var(--text-2)] hover:border-[var(--border-s)]'
       )}
     >
-      <Icon className="h-4 w-4 flex-shrink-0" />
+      <Icon className={cn('h-[15px] w-[15px] flex-shrink-0', activo && 'text-[var(--accent)]')} />
       {label}
     </Link>
   )
@@ -109,17 +108,16 @@ export function Sidebar() {
   })
 
   return (
-    <aside className="hidden md:flex flex-col fixed left-0 top-0 w-[220px] h-screen bg-[var(--surface)] border-r border-[var(--border)] z-40">
-      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-[var(--border)]">
-        <div className="h-7 w-7 rounded-[var(--radius-sm)] bg-[var(--accent)] flex items-center justify-center">
-          <Sun className="h-4 w-4 text-white" />
-        </div>
-        <span className="text-[14px] font-medium text-[var(--text)] tracking-[-0.02em]">
-          SolarOS
+    <aside className="hidden md:flex flex-col fixed left-0 top-0 w-[210px] h-screen bg-[var(--surface)] border-r border-[var(--border)] z-40">
+      {/* Logo */}
+      <div className="px-5 py-5 border-b border-[var(--border)]">
+        <span className="text-[15px] font-[700] tracking-[-0.04em] text-[var(--text)]">
+          Solar<span className="text-[var(--accent)]">OS</span>
         </span>
       </div>
 
-      <nav className="flex-1 p-3 flex flex-col gap-0.5 overflow-y-auto">
+      {/* Nav */}
+      <nav className="flex-1 py-2 flex flex-col overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.href}
@@ -131,13 +129,14 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-[var(--border)]">
+      {/* Logout */}
+      <div className="border-t border-[var(--border)]">
         <button
           onClick={() => cerrarSesionApp(router)}
-          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-[var(--radius-sm)] text-[13px] font-medium text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
+          className="flex items-center gap-2.5 w-full px-4 py-[10px] text-[13px] font-medium text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors border-l-[2px] border-transparent"
         >
-          <LogOut className="h-4 w-4 flex-shrink-0" />
-          Cerrar sesion
+          <LogOut className="h-[15px] w-[15px] flex-shrink-0" />
+          Cerrar sesión
         </button>
       </div>
     </aside>
@@ -152,35 +151,33 @@ export function MobileHeader() {
   const titulo = resolverTituloMovil(pathname)
 
   return (
-    <header className="md:hidden fixed top-0 left-0 right-0 h-[54px] bg-[var(--surface)] border-b border-[var(--border)] z-40">
+    <header className="md:hidden fixed top-0 left-0 right-0 h-[52px] bg-[var(--surface)] border-b border-[var(--border)] z-40">
       <div className="h-full px-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="h-7 w-7 rounded-[var(--radius-sm)] bg-[var(--accent)] flex items-center justify-center flex-shrink-0">
-            <Sun className="h-4 w-4 text-white" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-[var(--text)] truncate">SolarOS</p>
-            <p className="text-[10px] text-[var(--text-3)] truncate">{titulo}</p>
-          </div>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[14px] font-[700] tracking-[-0.04em] text-[var(--text)] flex-shrink-0">
+            Solar<span className="text-[var(--accent)]">OS</span>
+          </span>
+          <span className="text-[var(--border-s)] select-none text-[13px]">/</span>
+          <p className="text-[13px] font-medium text-[var(--text-2)] truncate">{titulo}</p>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {puedeVerConfiguracion ? (
             <Link
               href="/configuracion"
-              className="flex items-center justify-center h-8 w-8 rounded-[var(--radius-sm)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-              aria-label="Configuracion"
+              className="flex items-center justify-center h-7 w-7 text-[var(--text-3)] hover:text-[var(--text)] transition-colors"
+              aria-label="Configuración"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-[15px] w-[15px]" />
             </Link>
           ) : null}
           <button
             type="button"
             onClick={() => cerrarSesionApp(router)}
-            className="flex items-center justify-center h-8 w-8 rounded-[var(--radius-sm)] border border-[var(--border-s)] text-[var(--text-2)] hover:bg-[var(--surface-2)]"
-            aria-label="Cerrar sesion"
+            className="flex items-center justify-center h-7 w-7 text-[var(--text-3)] hover:text-[var(--text)] transition-colors"
+            aria-label="Cerrar sesión"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-[15px] w-[15px]" />
           </button>
         </div>
       </div>
@@ -196,32 +193,27 @@ export function DesktopHeader() {
   const titulo = resolverTituloMovil(pathname)
 
   return (
-    <header className="hidden md:flex items-center justify-between gap-4 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.08em] text-[var(--text-3)] font-[family-name:var(--font-mono)]">
-          Espacio de trabajo
-        </p>
-        <p className="text-[18px] font-medium tracking-[-0.02em] text-[var(--text)] truncate">
-          {titulo}
-        </p>
-      </div>
-
-      <div className="flex items-center gap-2 flex-shrink-0">
+    <header className="hidden md:flex items-end justify-between gap-6 pb-5 border-b border-[var(--border)]">
+      <h1 className="text-[26px] font-[700] tracking-[-0.04em] text-[var(--text)] leading-none">
+        {titulo}
+      </h1>
+      <div className="flex items-center gap-5 pb-0.5">
         {puedeVerConfiguracion ? (
-          <Link href="/configuracion">
-            <button className="bg-transparent text-[var(--text)] border border-[var(--border-s)] rounded-[var(--radius-sm)] px-4 py-2 text-[13px] font-medium hover:bg-[var(--surface-2)] transition-colors inline-flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Configuracion
-            </button>
+          <Link
+            href="/configuracion"
+            className="text-[12px] font-medium text-[var(--text-3)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5"
+          >
+            <Settings className="h-[13px] w-[13px]" />
+            Configuración
           </Link>
         ) : null}
         <button
           type="button"
           onClick={() => cerrarSesionApp(router)}
-          className="bg-[var(--text)] text-[var(--bg)] rounded-[var(--radius-sm)] px-4 py-2 text-[13px] font-medium tracking-[-0.01em] hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+          className="text-[12px] font-medium text-[var(--text-3)] hover:text-[var(--text)] transition-colors flex items-center gap-1.5"
         >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesion
+          <LogOut className="h-[13px] w-[13px]" />
+          Salir
         </button>
       </div>
     </header>
@@ -240,7 +232,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[var(--surface)] border-t border-[var(--border)] z-40"
+      className="md:hidden fixed bottom-0 left-0 right-0 h-[56px] bg-[var(--surface)] border-t border-[var(--border)] z-40"
       style={{ display: 'grid', gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
     >
       {navItems.map((item) => {
@@ -252,12 +244,12 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              'min-w-0 flex flex-col items-center justify-center gap-0.5 px-1 py-1 transition-colors',
+              'min-w-0 flex flex-col items-center justify-center gap-[3px] px-1 transition-colors',
               activo ? 'text-[var(--accent)]' : 'text-[var(--text-3)]'
             )}
           >
-            <Icon className="h-4 w-4" />
-            <span className="text-[9px] font-medium leading-none truncate max-w-full">
+            <Icon className="h-[15px] w-[15px]" />
+            <span className="text-[9px] font-[600] leading-none tracking-[0.02em] truncate max-w-full uppercase">
               {item.mobileLabel}
             </span>
           </Link>

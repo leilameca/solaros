@@ -129,6 +129,7 @@ export function WizardNuevoElectrico({
     } else if (paso === 2) {
       setPaso(3)
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function handleGuardar() {
@@ -522,12 +523,15 @@ export function WizardNuevoElectrico({
       )}
 
       {/* ── Navegación entre pasos ── */}
-      <div className="flex items-center justify-between mt-8 pt-5 border-t border-[var(--border)]">
+      <div className="sticky bottom-14 md:static z-10 bg-[var(--bg)] md:bg-transparent border-t border-[var(--border)] -mx-5 md:mx-0 px-5 md:px-0 py-3 md:pt-5 md:mt-8 flex items-center justify-between">
         <button
           type="button"
           onClick={() => {
             if (paso === 1) router.push('/electrico')
-            else setPaso((p) => (p - 1) as 1 | 2 | 3)
+            else {
+              setPaso((p) => (p - 1) as 1 | 2 | 3)
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
           }}
           className="flex items-center gap-1.5 bg-transparent text-[var(--text)] border border-[var(--border-s)] rounded-[var(--radius-sm)] px-4 py-2 text-[13px] font-medium hover:bg-[var(--surface-2)] transition-colors"
         >

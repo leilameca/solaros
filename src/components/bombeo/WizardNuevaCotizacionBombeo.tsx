@@ -259,10 +259,12 @@ export function WizardNuevaCotizacionBombeo({
     if (paso === 0 && !validarPaso0()) return
     if (paso === 1 && !validarPaso1()) return
     setPaso((prev) => Math.min(prev + 1, PASOS.length - 1))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function retroceder() {
     setPaso((prev) => Math.max(prev - 1, 0))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function enviar(estado: 'borrador' | 'enviada') {
@@ -576,7 +578,7 @@ export function WizardNuevaCotizacionBombeo({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="sticky bottom-14 md:static z-10 bg-[var(--bg)] md:bg-transparent border-t border-[var(--border)] md:border-t-0 -mx-5 md:mx-0 px-5 md:px-0 py-3 md:py-0 flex items-center justify-between gap-3">
         <Button variant="secondary" onClick={retroceder} disabled={paso === 0 || isPending}>
           <ChevronLeft className="h-3.5 w-3.5" />
           Atras

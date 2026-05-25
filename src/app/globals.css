@@ -3,45 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --bg:           #FAFAF8;
+  --bg:           #F5F4EF;
   --surface:      #FFFFFF;
-  --surface-2:    #F5F4F0;
-  --border:       rgba(0, 0, 0, 0.08);
-  --border-s:     rgba(0, 0, 0, 0.14);
-  --text:         #1A1A18;
-  --text-2:       #5C5C58;
-  --text-3:       #9C9C96;
+  --surface-2:    #EDECEA;
+  --border:       rgba(0, 0, 0, 0.09);
+  --border-s:     rgba(0, 0, 0, 0.17);
+  --text:         #18180F;
+  --text-2:       #57564D;
+  --text-3:       #97968E;
   --accent:       #C8860A;
-  --accent-bg:    #FDF3DC;
-  --accent-bd:    #E8C56A;
+  --accent-bg:    #FBF0D8;
+  --accent-bd:    #DEB84A;
   --green:        #1A7A4A;
-  --green-bg:     #EDFAF3;
+  --green-bg:     #EAF9F0;
   --blue:         #1B5FA8;
-  --blue-bg:      #EAF2FD;
+  --blue-bg:      #E8F1FB;
   --red:          #B83232;
-  --red-bg:       #FDECEC;
-  --radius:       10px;
-  --radius-sm:    6px;
+  --red-bg:       #FCEAEA;
+  --radius:       5px;
+  --radius-sm:    3px;
 }
 
 .dark {
   --bg:           #111110;
-  --surface:      #1C1C1A;
-  --surface-2:    #242422;
-  --border:       rgba(255, 255, 255, 0.08);
-  --border-s:     rgba(255, 255, 255, 0.14);
-  --text:         #F0EFE8;
-  --text-2:       #A8A8A0;
-  --text-3:       #686862;
+  --surface:      #191918;
+  --surface-2:    #222220;
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-s:     rgba(255, 255, 255, 0.13);
+  --text:         #EDECE4;
+  --text-2:       #A4A39B;
+  --text-3:       #605F58;
   --accent:       #E09A20;
-  --accent-bg:    #2A2008;
-  --accent-bd:    #7A5510;
+  --accent-bg:    #251C06;
+  --accent-bd:    #684B0D;
   --green:        #2DB870;
-  --green-bg:     #0A2018;
+  --green-bg:     #081A0F;
   --blue:         #4D9EF0;
-  --blue-bg:      #0A1828;
+  --blue-bg:      #071422;
   --red:          #E05555;
-  --red-bg:       #280A0A;
+  --red-bg:       #210707;
 }
 
 * {
@@ -58,17 +58,16 @@ body {
   color: var(--text);
 }
 
-/* Scrollbar personalizado */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-s);
-  border-radius: 3px;
+  border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-3);
